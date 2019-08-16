@@ -1,0 +1,43 @@
+@layout('master')
+@section('content')
+  {{ script('js/lib.js') }}
+  {{ script('js/brainwallet-login.js') }}
+  <div class="box">
+    <h2 class="title">Login</h2>
+
+    <form>
+      <input type="hidden" id="_csrf" value="{{ csrfToken }}">
+      <div class="field has-addons">
+        <!–– Username ––>
+        <div class="control is-expanded has-icons-left">
+          <input class="input" type="text" id="username" name="username" value="{{ old('username', '') }}" placeholder="username">
+          <span class="icon is-small is-left">
+            <i class="fas fa-smile-beam"></i>
+          </span>
+        </div>
+
+        <!–– Password ––>
+        <div class="control is-expanded has-icons-left">
+          <input class="input" type="password" id="password" name="password" value="{{ old('password', '') }}" placeholder="Password">
+          <span class="icon is-small is-left">
+            <i class="fas fa-key"></i>
+          </span>
+        </div>
+
+        <!–– Place Listing ––>
+        <div class="control">
+          <button type="button" onclick="loginElite()" class="button is-primary">
+              login
+          </button>
+        </div>
+      </div>
+
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('brainwallet'), hasErrorFor('brainwallet')) }}
+    </form>
+  </div>
+  @if(old('notification'))
+    <div class="notification is-success">
+        {{ old('notification') }}
+    </div>
+  @endif
+@endsection

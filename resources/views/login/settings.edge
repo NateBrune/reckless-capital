@@ -1,0 +1,46 @@
+@layout('master')
+@section('content')
+  {{ script('js/lib.js') }}
+  {{ script('js/brainwallet-login.js') }}
+  <div class="box">
+    <h2 class="title">Settings</h2>
+
+    <form action="settings" method="POST">
+      {{ csrfField() }}
+      <div class="field">
+        <label class="label">Desired Username</label>
+        <div class="control has-icons-left has-icons-right">
+          <input class="input is-success" type="text" name="username" value="{{ old('username', '') }}"  placeholder="Username">
+          <span class="icon is-small is-left">
+            <i class="fas fa-user-circle"></i>
+          </span>
+          <span class="icon is-small is-right">
+            <i class="fas fa-check"></i>
+          </span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Profile Picture</label>
+        <div class="control has-icons-left has-icons-right">
+          <input class="input is-success" type="text" name="picture" value="{{ old('picture', '') }}" placeholder="http://example.com/profile.png">
+          <span class="icon is-small is-left">
+            <i class="fas fa-link"></i>
+          </span>
+          <span class="icon is-small is-right">
+            <i class="fas fa-check"></i>
+          </span>
+        </div>
+      </div>
+      <div class="control">
+        <button type="submit" class="button is-right is-primary">Submit</button>
+      </div>
+
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('settings'), hasErrorFor('settings')) }}
+    </form>
+  </div>
+  @if(old('notification'))
+    <div class="notification is-success">
+        {{ old('notification') }}
+    </div>
+  @endif
+@endsection

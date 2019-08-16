@@ -1,0 +1,105 @@
+@layout('master')
+
+@section('content')
+<div class="box">
+  <form action="sendMsg" method="POST">
+      {{ csrfField() }}
+
+      <div class="field has-addons">
+        <!–– To Field ––>
+        <div class="control has-icons-left is-expanded">
+          <input class="input" type="text" name="toElite" value="{{ old('toElite', '') }}" placeholder="Send to...">
+          <span class="icon is-small is-left">
+            <i class="fas fa-key"></i>
+          </span>
+        </div>
+
+        <!–– Message Field ––>
+        <div class="control has-icons-left is-expanded">
+          <input class="input" type="text" name="message" value="{{ old('message', '') }}" placeholder="Message...">
+          <span class="icon is-small is-left">
+            <i class="fas fa-envelope"></i>
+          </span>
+        </div>
+        <div class="control">
+          <button type="submit" class="button">Send</button>
+        </div>
+      </div>
+    </form>
+
+{{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
+{{ elIf('<p class="help is-danger">$self</p>', getErrorFor('toElite'), hasErrorFor('toElite')) }}
+{{ elIf('<p class="help is-danger">$self</p>', getErrorFor('message'), hasErrorFor('message')) }}
+</div>
+
+  <div class="box">
+    <h1 class="title">Inbox</h1>
+
+      @each(message in messages)
+      <div class="card">
+        <header class="card-header">
+          <p class="card-header-title">
+            From {{ message.senderUsername }}
+          </p>
+          <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
+            {{ csrfField() }}
+            <button type="submit" class="button is-danger is-outlined">
+              <span class="icon is-small">
+                <i class="fa fa-times" aria-hidden="true"></i>
+              </span>
+            </button>
+          </form>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            {{ message.message }}
+            <br>
+          </div>
+        </div>
+        @if( message.msgType )
+        <footer class="card-footer">
+          <a href="#" class="card-footer-item">Accept</a>
+          <a href="#" class="card-footer-item">Reject</a>
+        </footer>
+        @else
+        <footer class="card-footer">
+        <br>
+        </footer>
+        @endif
+      </div>
+      @else
+
+      @endeach
+      <!--
+      <table class="table is-bordered is-striped is-narrow is-fullwidth">
+        <thead>
+          <tr>
+            <th>Sender</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          @each(message in messages)
+            <tr>
+              <td>
+                {{ message.senderUsername }}
+              </td>
+              <td>
+                {{ message.message }}
+              </td>
+            </tr>
+          @else
+            <tr>
+              <td colspan="5" class="has-text-centered">No Mail :(</td>
+            </tr>
+          @endeach
+        </tbody>
+      </table>
+      -->
+  </div>
+  @if(old('notification'))
+    <div class="notification is-success">
+        {{ old('notification') }}
+    </div>
+  @endif
+@endsection

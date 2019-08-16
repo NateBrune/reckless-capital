@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" style="background-image: url('img/white-waves.png'); background-repeat: round;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Atlanta</title>
+    {{ style('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css') }}
+    {{ style('https://cdnjs.cloudflare.com/ajax/libs/bulma/0.5.1/css/bulma.min.css') }}
+</head>
+<body>
+    @!component('components.navbar', auth = auth)
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-10 is-offset-1">
+                    @!section('content')
+                </div>
+            </div>
+        </div>
+  </section>
+</body>
+</html>

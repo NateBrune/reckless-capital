@@ -1,0 +1,59 @@
+@layout('master')
+
+@section('content')
+  <div class="box">
+    <h2 class="title">New Listing</h2>
+
+    <form action="/listLSAT" method="POST">
+      {{ csrfField() }}
+
+        <!–– Owner's public key ––>
+      <div class="field has-addons">
+        <div class="control has-icons-left is-expanded">
+          <input class="input" type="text" name="owner" value="{{ old('owner', '') }}" placeholder="Owner">
+          <span class="icon is-small is-left">
+            <i class="fas fa-key"></i>
+          </span>
+        </div>
+      </div>
+
+        <!–– How much LSat you have ––>
+      <div class="field has-addons">
+        <div class="control has-icons-left">
+          <input class="input" type="text" name="hasLSAT" value="{{ old('hasLSAT', '') }}" placeholder="Liquidity">
+          <span class="icon is-small is-left">
+            <i class="fab fa-btc"></i>
+          </span>
+        </div>
+  
+        <!–– How much the owner wants for it ––>
+        <div class="control has-icons-left">
+          <input class="input" type="text" name="stipend" value="{{ old('stipend', '') }}" placeholder="Fee">
+          <span class="icon is-small is-left">
+            <i class="fab fa-btc"></i>
+          </span>
+        </div>
+
+        <!–– Place Listing ––>
+        <div class="control">
+          <button type="submit" class="button is-primary">
+              Add Listing
+          </button>
+        </div>
+      </div>
+      
+      <!–– Address used to create this listing ––>
+      <div class="control">
+        <input class="input" type="hidden" name="elite" value="{{ auth.user.address }}">
+      </div>
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('owner'), hasErrorFor('owner')) }}
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('hasLSAT'), hasErrorFor('hasLSAT')) }}
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('stipend'), hasErrorFor('stipend')) }}
+    </form>
+  </div>
+  @if(old('notification'))
+    <div class="notification is-success">
+        {{ old('notification') }}
+    </div>
+  @endif
+  @endsection
