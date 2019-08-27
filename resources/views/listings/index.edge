@@ -1,37 +1,38 @@
 @layout('master')
 
 @section('content')
-  <div class="box">
-    <h1 class="title">Offers</h1>
-
-      <table class="table is-bordered is-striped is-narrow is-fullwidth">
-        <thead>
-          <tr>
-            <th>Profile</th>
-            <th>Public Key</th>
-            <th>Liquidity</th>
-            <th>Stipend</th>
-            <th>Action</th>
-            <th>Debug</th>
-          </tr>
-        </thead>
-        <tbody>
-          @each(listing in listings)
-            <tr>
-              <td>
-                {{ listing.username || listing.elite }}
-              </td>
-              <td>
-                {{ listing.owner }}
-              </td>
-              <td>
-                {{ listing.hasLSAT }}
-              </td>
-              <td>
-                {{ listing.stipend }}
-              </td>
-              <td>
-              @if(auth.user.address == listing.elite)
+  {{ script('js/sorttable.js') }}
+      <div class="card">
+        <div class="card-content">
+          <section class="hero">
+            <div class="hero-body">
+              <div class="container">
+                <h1 class="title">
+                  Listings
+                </h1>
+                <h2 class="subtitle">
+                  Offers for liquidity 
+                </h2>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div>
+      <br>
+      </div>
+      @each(listing in listings)
+      @if(!listing.pendingAccept)
+      <div class="box">
+        <article class="media">
+          <div class="media-left">
+            <figure class="image is-64x64">
+              <img class="is-rounded" src="{{ listing.picture }}" alt="Image">
+            </figure>
+          </div>
+          <div class="media-content">
+            <div class="is-pulled-right">
+              @if(auth.user.publicKey == listing.sellerPublicKey)
                 <form action="{{ 'listings/' + listing.id + '?_method=DELETE' }}" method="POST">
                   {{ csrfField() }}
                   <button type="submit" class="button is-danger is-outlined">
@@ -45,7 +46,71 @@
                 <form action="{{ 'sendMsg/' + listing.id }}" method="POST">
                   {{ csrfField() }}
                   <input type="hidden" name="toElite" value="{{ listing.username }}">
-                  <input type="hidden" name="message" value="{{ auth.user.address +' has accepted your offer: ' + listing.id }}">
+                  <input type="hidden" name="message" value="{{ auth.user.address +' would like ' + listing.hasLSAT +' BTC liquidity' }}">
+                  <button type="submit" class="button is-outlined">
+                    <span>BUY</span>
+                    <span class="icon is-small">
+                      <i class="fa fa-times" aria-hidden="true"></i>
+                    </span>
+                  </button>
+                </form>
+              @endif
+            </div>
+            <div class="content">
+              <p>
+                <strong>{{ listing.username }}</strong> <small> is selling </small> <strong>{{ listing.hasLSAT }} lBTC</strong><small> for just </small><strong>{{ listing.stipend }} BTC</strong>
+                <br>
+                {{ listing.sellerNodePublicKey }} 
+              </p>
+            </div>
+          </div>
+        </article>
+      </div>
+      @endif
+      @endeach
+      <!--
+      <table class="table is-bordered is-striped is-narrow is-fullwidth is-hoverable sortable">
+        <thead>
+          <tr>
+            <th>Profile</th>
+            <th>Public Key</th>
+            <th>Liquidity</th>
+            <th>Stipend</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @each(listing in listings)
+          @if(!listing.pendingAccept)
+            <tr>
+              <td>
+                {{ listing.username || listing.sellerAddress }}
+              </td>
+              <td>
+                {{ listing.sellerNodePublicKey }}
+              </td>
+              <td>
+                {{ listing.hasLSAT }}
+              </td>
+              <td>
+                {{ listing.stipend }}
+              </td>
+              <td>
+              @if(auth.user.publicKey == listing.sellerPublicKey)
+                <form action="{{ 'listings/' + listing.id + '?_method=DELETE' }}" method="POST">
+                  {{ csrfField() }}
+                  <button type="submit" class="button is-danger is-outlined">
+                    <span>DELETE</span>
+                    <span class="icon is-small">
+                      <i class="fa fa-times" aria-hidden="true"></i>
+                    </span>
+                  </button>
+                </form>
+              @else
+                <form action="{{ 'sendMsg/' + listing.id }}" method="POST">
+                  {{ csrfField() }}
+                  <input type="hidden" name="toElite" value="{{ listing.username }}">
+                  <input type="hidden" name="message" value="{{ auth.user.address +' would like ' + listing.hasLSAT +' BTC liquidity' }}">
                   <button type="submit" class="button is-outlined">
                     <span>BUY</span>
                     <span class="icon is-small">
@@ -55,10 +120,8 @@
                 </form>
               @endif
               </td>
-              <td>
-              {{ listing.pendingAccept }}
-              </td>
             </tr>
+          @endif
           @else
             <tr>
               <td colspan="5" class="has-text-centered">No offers available at this time :(</td>
@@ -66,7 +129,7 @@
           @endeach
         </tbody>
       </table>
-  </div>
+      -->
   @if(old('notification'))
     <div class="notification is-success">
         {{ old('notification') }}

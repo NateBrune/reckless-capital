@@ -21,7 +21,7 @@
       @loggedIn
       <div class="navbar-item">
         <a class="button is-light" href="new">
-          New
+          Sell Liquidity
         </a>
       </div>
       @endloggedIn
@@ -37,7 +37,16 @@
           @if(auth.user.hasMail)
           <i class="fas fa-envelope-open-text"></i>
           @else
-          <i class="fas fa-envelope"></i>
+          <i class="far fa-envelope"></i>
+          @endif
+        </a>
+      </div>
+      <div class="navbar-item">
+        <a class="button is-light" href="offers">
+          @if(auth.user.hasOffer)
+          <i class="fas fa-folder-open"></i>
+          @else
+          <i class="far fa-folder"></i>
           @endif
         </a>
       </div>

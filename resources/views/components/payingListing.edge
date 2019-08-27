@@ -1,0 +1,103 @@
+<div class="card">
+    <div class="card-content">
+      <div class="media">
+        <div class="media-left">
+          <figure class="image is-48x48">
+            <img class="is-rounded" src="{{ message.senderPicture }}" alt="Placeholder image">
+          </figure>
+        </div>
+        <div class="media-content">
+          <p class="title is-4">{{ message.senderUsername }}</p>
+          <p class="subtitle is-6">{{ message.senderAddress }}</p>
+        </div>
+      <div class="media-right">
+        <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
+            {{ csrfField() }}
+            <button class="delete is-small" type="submit"></button>
+        </form>
+      </div>
+      </div>
+      <div class="content">
+        <div class="columns">
+          <div class="column is-four-fifths">
+            <div class="box">
+              <article class="media">
+                <div class="media-content">
+                  <div class="is-pulled-right">
+                    <i class="fas fa-exclamation-triangle"></i>
+                  </div>
+                  <div class="content">
+                    <p>
+                      <small>Pay</small><strong> {{ listingStipend[message.aboutListing] }} BTC </strong> <small> to </small> <strong id="{{ 'address'+message.aboutListing }}">{{ listingAddress[message.aboutListing] }}</strong>
+                      <br>
+                      Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.
+                    </p>
+                  </div>
+                </div>
+              </article>
+            </div>
+            <!--
+            <article class="message is-medium">
+              <div class="message-header">
+                <p class="is-relative">Payment Address</p>
+              </div>
+              <!-- On one line to remove newline while copying div --><!--
+              <div id="{{ 'address'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ listingAddress[message.aboutListing] }}</strong></div>
+            </article>
+            -->
+            <div class="columns">
+              <div class="column is-one-fifth">
+                <a class="button" onclick="toggleElement('redeemScript')">Show Redeem Script</a>
+                <p>The redeem script can be used to recover BTC in the event the website shuts down unexpectedly</p>
+              </div>
+              <div class="column is-four-fifths">
+                <div id="redeemScript" style="display: none;">
+                  <article class="message is-small">
+                    <div class="message-header">
+                      <p class="is-relative">Redeem Script</p>
+                    </div>
+                    <div id="{{ 'div'+message.aboutListing }}" class="message-body hidden" style="word-wrap: break-word">
+                    <strong>{{ redeemScripts[message.aboutListing] }}</strong>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column is-one-fifth ">
+            <div class="box">
+              <article class="media">
+                <div class="media-content">
+                <center><div id="{{ 'paymentAddress' + message.id }}"></div></center>
+                </div>
+              </article>
+            </div>
+            <progress class="progress is-warning" max="100"></progress>
+            <script>
+            var qrcode = new QRCode(document.getElementById("{{ 'paymentAddress' + message.id }}"), {
+              width : 150,
+              height : 150
+            });
+            
+            qrcode.makeCode("{{{ 'bitcoin:' + listingAddress[message.aboutListing] + '?amount=' + listingStipend[message.aboutListing] + '&label=Atlanta-Liquidity-Project' }}}")
+            </script>
+          </div>
+        </div>
+        <span class="is-pulled-right">
+          <p>Copy Payment Address  <i class="fas fa-copy" onclick="CopyToClipboard('{{ 'address'+message.aboutListing }}')"></i></p>
+        </span>
+        <p>{{ message.created_at }} EST</p>
+        <br />
+        @if(listingStatus[message.aboutListing] != "pending")
+          <div class="columns">
+            <div class="column">
+              <a class="button is-small is-fullwidth is-success">Accept</a>
+            </div>
+            <div class="column">
+              <a class="button is-small is-fullwidth is-danger">Deny</a>
+            </div>
+          </div>
+        @endif
+      </div>
+    </div>
+  </div>

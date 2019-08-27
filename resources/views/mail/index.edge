@@ -1,6 +1,23 @@
 @layout('master')
 
 @section('content')
+<div class="card">
+  <div class="card-content">
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            Message Inbox
+          </h1>
+          <h2 class="subtitle">
+            Messages from users of the website 
+          </h2>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
 <div class="box">
   <form action="sendMsg" method="POST">
       {{ csrfField() }}
@@ -32,10 +49,33 @@
 {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('message'), hasErrorFor('message')) }}
 </div>
 
-  <div class="box">
-    <h1 class="title">Inbox</h1>
-
       @each(message in messages)
+      @if(message.msgType === 0)
+      <div class="box">
+        <article class="media">
+          <div class="media-left">
+            <figure class="image is-64x64">
+              <img src="{{ message.senderPicture || 'https://www.pinclipart.com/picdir/middle/157-1578186_user-profile-default-image-png-clipart.png'}}" alt="Image">
+            </figure>
+          </div>
+          <div class="media-content">
+          <span class="is-pulled-right">
+          <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
+            {{ csrfField() }}
+            <button class="delete is-small" type="submit"></button>
+          </form>
+          </span>
+            <div class="content">
+              <p>
+                <strong>{{ message.senderUsername }}</strong> <small>{{ message.senderAddress }}</small> <small>{{ message.created_at }} EST</small>
+                <br>
+                {{ message.message }}
+              </p>
+            </div>
+          </div>
+        </article>
+      </div>
+      <!--
       <div class="card">
         <header class="card-header">
           <p class="card-header-title">
@@ -56,19 +96,12 @@
             <br>
           </div>
         </div>
-        @if( message.msgType )
-        <footer class="card-footer">
-          <a href="#" class="card-footer-item">Accept</a>
-          <a href="#" class="card-footer-item">Reject</a>
-        </footer>
-        @else
         <footer class="card-footer">
         <br>
         </footer>
-        @endif
       </div>
-      @else
-
+      -->
+    @endif
       @endeach
       <!--
       <table class="table is-bordered is-striped is-narrow is-fullwidth">
@@ -96,7 +129,6 @@
         </tbody>
       </table>
       -->
-  </div>
   @if(old('notification'))
     <div class="notification is-success">
         {{ old('notification') }}

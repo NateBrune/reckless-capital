@@ -1,0 +1,56 @@
+<div class="card">
+    <div class="card-content">
+      <div class="media">
+        <div class="media-left">
+          <figure class="image is-48x48">
+            <img class="is-rounded" src="{{ message.senderPicture }}" alt="Placeholder image">
+          </figure>
+        </div>
+        <div class="media-content">
+          <p class="title is-4">{{ message.senderUsername }}</p>
+          <p class="subtitle is-6">{{ message.senderAddress }}</p>
+        </div>
+      <div class="media-right">
+        <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
+            {{ csrfField() }}
+            <button class="delete is-small" type="submit"></button>
+        </form>
+      </div>
+      </div>
+      <div class="content">
+        <div class="columns">
+          <div class="column is-four-fifths">
+            <article class="message is-small">
+              <div class="message-header">
+                <p class="is-relative">Redeem Script</p>
+              </div>
+              <!-- On one line to remove newline while copying div -->
+              <div id="{{ 'div'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ redeemScripts[message.aboutListing] }}</strong></div>
+            </article>
+          </div>
+          <div class="column is-one-fifth ">
+            <div class="notification is-warning">
+              <center>Payment is {{ listingStatus[message.aboutListing] }}.</center>
+            </div>
+            <progress class="progress is-warning" max="100"></progress>
+            
+          </div>
+        </div>
+        <span class="is-pulled-right">
+          <p>Copy redeem script <i class="fas fa-copy" onclick="CopyToClipboard('{{ 'div'+message.aboutListing }}')"></i></p>
+        </span>
+        <p>{{ message.created_at }} EST</p>
+        <br />
+        @if(listingStatus[message.aboutListing] != "pending")
+          <div class="columns">
+            <div class="column">
+              <a class="button is-small is-fullwidth is-success">Accept</a>
+            </div>
+            <div class="column">
+              <a class="button is-small is-fullwidth is-danger">Deny</a>
+            </div>
+          </div>
+        @endif
+      </div>
+    </div>
+  </div>

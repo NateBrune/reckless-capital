@@ -2,13 +2,16 @@ function loginElite(){
   var username = document.getElementById("username").value
   var password = document.getElementById("password").value
   var csrf = document.getElementById("_csrf").value
-  const credentials = derivePubKey(username, password, 0)
-  const wif = derivePrivateKey(username, password, 0)
-  const challenge = httpGet("challenge/" + credentials)
+  const publicKey = derivePubKey(username, password, 0)
+  const privateKey = derivePrivateKey(username, password, 0)
+  localStorage.setItem('privateKey', privateKey);
+  localStorage.setItem('publicKey', publicKey)
+  const challenge = httpGet("challenge/" + publicKey)
   console.log("challenge string: " + challenge)
+  console.log(publicKey)
   //alert("got challenge: " + challenge)
-  const signature = signString(wif, challenge)
-  result = httpPost("verify", {address: credentials, signature: signature, _csrf: csrf})
+  const signature = signString(privateKey, challenge)
+  result = httpPost("verify", {publicKey: publicKey, signature: signature, _csrf: csrf})
   window.location = "/"
   //console.log(result)
 }

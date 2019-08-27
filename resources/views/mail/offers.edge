@@ -1,0 +1,65 @@
+@layout('offersTemplate')
+
+@section('content')
+<script>
+  function CopyToClipboard(containerid) {
+  if (document.selection) { 
+      document.selection.empty();
+      var range = document.body.createTextRange();
+      range.moveToElementText(document.getElementById(containerid));
+      range.select().createTextRange();
+      document.execCommand("copy");
+
+  } else if (window.getSelection) {
+      window.getSelection().removeAllRanges()
+      var range = document.createRange();
+      range.selectNode(document.getElementById(containerid));
+      window.getSelection().addRange(range);
+      document.execCommand("copy");
+      alert("copied")
+  }}
+  function toggleElement(containerid) {
+    var x = document.getElementById(containerid)
+    if (x.style.display === "none") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+</script>
+{{ script('js/qrcode.js') }}
+
+<div class="card">
+  <div class="card-content">
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            Open Offers
+          </h1>
+          <h2 class="subtitle">
+            Offers which are pending, or currently active
+          </h2>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div>
+<br>
+</div>
+  @if(old('notification'))
+    <div class="notification is-success">
+        {{ old('notification') }}
+    </div>
+  @endif
+  @each(message in messages)
+  @if(message.msgType != 0)
+    @if(message.receiverAddress == auth.user.address)
+      @!component('components.pendingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, csrfField = csrfField)
+    @else
+      @!component('components.payingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingLiquidity = listingLiquidity, csrfField = csrfField, QRCode = QRCode)
+    @endif
+  @endif
+  @endeach
+@endsection

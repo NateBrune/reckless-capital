@@ -2,6 +2,24 @@
 @section('content')
   {{ script('js/lib.js') }}
   {{ script('js/brainwallet-login.js') }}
+  <script>
+
+  function setFields(){
+    document.getElementById("pubkeyField").value = localStorage.getItem('publicKey')
+    document.getElementById("privkeyField").value = localStorage.getItem('privateKey')
+  }
+  
+  function showPrivateKey(){
+    if(document.getElementById("privkeyField").type != "text"){
+      document.getElementById("privkeyField").type = "text"
+    } else {
+      document.getElementById("privkeyField").type = "password"
+    }
+    
+  }
+  
+  setTimeout(setFields, 750);
+  </script>
   <div class="box">
     <h2 class="title">Settings</h2>
 
@@ -10,7 +28,7 @@
       <div class="field">
         <label class="label">Desired Username</label>
         <div class="control has-icons-left has-icons-right">
-          <input class="input is-success" type="text" name="username" value="{{ old('username', '') }}"  placeholder="Username">
+          <input class="input is-success" type="text" name="username" value="{{ auth.user.username }}"  placeholder="Username">
           <span class="icon is-small is-left">
             <i class="fas fa-user-circle"></i>
           </span>
@@ -22,7 +40,7 @@
       <div class="field">
         <label class="label">Profile Picture</label>
         <div class="control has-icons-left has-icons-right">
-          <input class="input is-success" type="text" name="picture" value="{{ old('picture', '') }}" placeholder="http://example.com/profile.png">
+          <input class="input is-success" type="text" name="picture" value="{{ auth.user.picture }}" placeholder="http://example.com/profile.png">
           <span class="icon is-small is-left">
             <i class="fas fa-link"></i>
           </span>
@@ -38,6 +56,27 @@
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('settings'), hasErrorFor('settings')) }}
     </form>
   </div>
+
+
+ <div class="box">
+    <h2 class="title">Wallet Keys</h2>
+    <div class="field is-grouped">
+      <p class="control is-expanded">
+        <input id="pubkeyField" class="input" type="text" placeholder="Public Key">
+      </p>
+    </div>
+    <div class="field is-grouped">
+      <p class="control is-expanded">
+        <input id="privkeyField" class="input" type="password" placeholder="Private Key">
+      </p>
+      <p class="control">
+        <a onclick="showPrivateKey()" class="button is-info">
+          Show
+        </a>
+      </p>
+    </div>
+  </div>
+
   @if(old('notification'))
     <div class="notification is-success">
         {{ old('notification') }}

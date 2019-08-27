@@ -10,13 +10,9 @@
 <body>
     @!component('components.navbar', auth = auth)
     <section class="section">
-        <div class="container">
-            <div class="columns is-vcentered is-two-thirds">
-                <div class="column">
-                    @!section('content')
-                </div>
-            </div>
+        <div class="container is-block">
+            @!section('content')
         </div>
-  </section>
+    </section>
 </body>
 </html>

@@ -7,17 +7,25 @@ class ListingsSchema extends Schema {
   up () {
     this.create('listings', (table) => {
       table.increments()
-      table.string('owner').notNullable()
+      // Seller
+      table.string('sellerNodePublicKey').notNullable()
+      table.integer('stipend').notNullable().unsigned()
+      table.string('sellerPublicKey').notNullable()
+      table.string('sellerAddress').notNullable()
       table.integer('hasLSAT').unsigned()
       table.integer('wantsLSAT').unsigned()
-      table.integer('stipend').notNullable().unsigned()
-      table.string('elite').notNullable()
       table.string('username')
       table.string('picture')
-      table.boolean('pendingAccept').notNullable()
-      table.boolean('accepted').notNullable()
+
+      table.string('buyerPublicKey')
       table.string('buyerAddress')
-      table.integer('initiated')
+
+      table.boolean('accepted').notNullable()
+      table.boolean('pendingAccept').notNullable()
+      table.boolean('inMempool').notNullable()
+      table.boolean('funded').notNullable()
+      table.string('redeemScript')
+      table.string('fundingAddress')
       table.timestamps()
     })
   }
