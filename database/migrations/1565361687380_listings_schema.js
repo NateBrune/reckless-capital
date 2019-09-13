@@ -24,6 +24,10 @@ class ListingsSchema extends Schema {
       table.boolean('pendingAccept').notNullable()
       table.boolean('inMempool').notNullable()
       table.boolean('funded').notNullable()
+      table.string('fundingTransactionHash')
+      table.integer('fundingTransactionVout')
+      table.integer('fundingTransactionAmount') //satoshis
+      table.string('output')
       table.string('redeemScript')
       table.string('fundingAddress')
       table.timestamps()

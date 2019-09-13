@@ -4,13 +4,17 @@ const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
 const { validate } = use('Validator')
 
+const BtcWalletController = use('App/Services/BtcWalletController')
+
 class ListingController {
     async index ({ view }) {
         //const listings = await Listing.all()
         var queryListing = await Listing.query().where('accepted', 0).fetch()
         var listings = []
         queryListing['rows'].forEach((listing)=>listings.push(listing))
-        return view.render('listings.index', {listings: listings })
+        //sort by cheapest to most expensive offers
+        const sortedListings = listings.sort((a, b) => (a.hasLSAT/a.stipend > b.hasLSAT/b.stipend) ? -1 : 1)
+        return view.render('listings.index', {listings: sortedListings })
       }
 
       async new ({ view }) {
@@ -43,8 +47,6 @@ class ListingController {
 
         // persist to database
         const elite = await auth.getUser()
-        console.log("elite trying to store")
-        console.log(elite)
         const listing = new Listing()
         listing.sellerNodePublicKey = request.input('owner')
         listing.stipend = request.input('stipend')
@@ -77,9 +79,18 @@ class ListingController {
         return response.redirect('back')
       }
 
+      async declineListing({response, request, auth}) {
+        const url = request.url()
+        const id = url.split("/")[2]
+        const wallet = new BtcWalletController()
+        const txData = await wallet.refundListing(id, auth.user.refundAddress)
+        return response.redirect('/plsSignTx/'+txData)
+      }
+
       async walletnotify ({ params, request }) {
-        console.log("Captured POST at walletnotify")
-        console.log(request.input('txid'))
+        console.log("walletnotify: " + request.input('txid'))
+        const wallet = new BtcWalletController()
+        await wallet.walletNotify(request.input('txid'))
       }
 }
 

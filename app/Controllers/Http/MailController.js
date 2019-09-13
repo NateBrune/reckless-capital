@@ -75,7 +75,7 @@ class MailController {
           
         }
       }
-      console.log(listingStipend)
+      //console.log(listingStipend)
     })
     return view.render('mail.offers', { messages: messages, redeemScripts: redeemScripts, listingAddress: listingAddress, listingStatus: listingStatus, listingLiquidity: listingLiquidity, listingStipend: listingStipend })
   }
@@ -83,13 +83,13 @@ class MailController {
   async destroy ({ params, session, response, auth }) {
     const message = await Message.find(params.id)
     if((message.receiverAddress == auth.user.address)||(message.senderAddress == auth.user.address)){
-      console.log("in destroy")
       const listing = await Listing.find(message.aboutListing)
       await message.delete()
-      console.log(listing)
       // Put listing back on the map
       if(listing != null){
         listing.pendingAccept = false
+        listing.inMempool = false
+        listing.funded = false
         await listing.save()
       }
       session.flash({ notification: 'Message deleted!' })
@@ -107,7 +107,6 @@ class MailController {
   }
 
   async sendMsg ({ auth, request, response, session, params }) {
-    console.log('sendmessage')
     // validate form input
     const validation = await validate(request.all(), {
       toElite: 'required',
@@ -118,15 +117,6 @@ class MailController {
       console.log("validation failed")
       session.withErrors(validation.messages())
               .flashAll()
-      return response.redirect('back')
-    }
-    console.log('authcheck')
-    try {
-      await auth.check()
-    } catch (error) {
-      session
-      .withErrors([{ field: 'notification', message: 'Not Logged in' }])
-      .flashAll()
       return response.redirect('back')
     }
 
@@ -147,7 +137,6 @@ class MailController {
 
     if(params.id){
       const referenceListing = await Listing.query().where('id', params.id).first()
-      console.log("reference listing")
       //console.log(referenceListing)
       if(referenceListing.pendingAccept == false && referenceListing.accepted == false){
         // buyer wants to buy ln liquidity. Check they've funded the p2wsh and mark pending.
@@ -155,6 +144,7 @@ class MailController {
         const walletService = new BtcWalletController()
         tx = await walletService.appendP2WSHtoListing(referenceListing, elite.publicKey,toElite.publicKey)
         _Message = await this.setMessage(request.input('message'), msgType, tx)
+
         
         await Elites.query().where('username', request.input('toElite').toString()).update({
           hasOffer: true
@@ -185,7 +175,6 @@ class MailController {
       })
     }
     
-    console.log(elite.picture)
     msg.senderAddress = elite.address
     msg.senderUsername = elite.username
     msg.senderPicture = elite.picture

@@ -9,6 +9,7 @@ class UserSchema extends Schema {
       table.increments()
       table.string('username', 64).unique()
       table.string('publicKey', 128).notNullable().unique()
+      table.string('refundAddress', 64)
       table.string('address', 64)
       table.string('picture', 128)
       table.string('challenge', 128)

@@ -44,10 +44,13 @@
         @if(listingStatus[message.aboutListing] != "pending")
           <div class="columns">
             <div class="column">
-              <a class="button is-small is-fullwidth is-success">Accept</a>
+              <form action="{{ 'acceptListing/' + message.id }}" method="POST">
+                {{ csrfField() }}
+                <a onclick='this.parentNode.submit();' class="button is-small is-fullwidth is-success">Accept</a>
+              </form>
             </div>
             <div class="column">
-              <a class="button is-small is-fullwidth is-danger">Deny</a>
+              <a class="button is-small is-fullwidth is-danger" href={{ 'declineListing/' + message.aboutListing }}>Deny</a>
             </div>
           </div>
         @endif

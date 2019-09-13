@@ -27,7 +27,8 @@ window.deriveAddress = function (username, password, count){
   const keyPair = bitcoin.ECPair.fromPrivateKey(hash)
   //this.console.log(keyPair)
 
-  const addr = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network: TESTNET }).address
+  //const addr = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network: TESTNET }).address
+  const addr = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network: bitcoin.networks.regtest }).address
   //const secret = keyPair.toWIF()
   
   return addr
@@ -51,7 +52,16 @@ window.derivePrivateKey = function (username, password, count){
 window.signString = function (wif, message){
   const keyPair = bitcoin.ECPair.fromWIF(wif)
   var privateKey = keyPair.privateKey
-  var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: TESTNET })
-  
+  //var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: TESTNET })
+  var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: bitcoin.networks.regtest })
+
   return signature
+}
+
+window.signTx = function(wif, tx){
+  const keyPair = bitcoin.ECPair.fromWIF(wif)
+  const signer = bitcoin.Psbt.fromHex(tx);
+  signer.signAllInputs(keyPair);
+  return signer.toHex()
+
 }

@@ -1,0 +1,15 @@
+@layout('master')
+@section('content')
+  {{ script('js/lib.js') }}
+  {{ script('js/brainwallet-login.js') }}
+
+  <input type="hidden" id="_csrf" value="{{ csrfToken }}">
+
+  <script>
+  var csrf = document.getElementById("_csrf").value
+  var signed = signTx(localStorage.getItem('privateKey'), "{{ transactionData }}")
+  httpPost("/broadcastTx", {tx: signed, _csrf: csrf})
+  window.location = "/"
+  </script>
+
+@endsection

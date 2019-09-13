@@ -33,6 +33,7 @@ class LoginController {
     const elite = await auth.getUser()
     elite.username = request.input('username')
     elite.picture = request.input('picture')
+    elite.refundAddress = request.input('refundAddress')
     elite.save()
     console.log(request.input('picture'))
     session.flash({ notification: 'Profile settings saved.'})
@@ -56,6 +57,7 @@ class LoginController {
     return response.redirect('back')
   }
 
+  /* TODO: await which result in an exception will return the error message to the user here */
   async challenge ({ request, session }) {
     const url = request.url()
     const elitePublicKey = url.split("/")[2]
@@ -94,7 +96,6 @@ class LoginController {
       
       var result = false
       const wallet = new BtcWalletController()
-      console.log(wallet.derriveAddressFromPublicKey(elitePublicKey).toLowerCase())
       try{
         result = bitcoinMessage.verify(elite.challenge.toString(), wallet.derriveAddressFromPublicKey(elitePublicKey).toLowerCase(), eliteSignature)
       } catch (e){
@@ -121,6 +122,24 @@ class LoginController {
   async logout ({ auth, response }) {
     await auth.logout()
     return response.redirect('/')
+  }
+
+  async signTx({view, request}){
+    const url = request.url()
+    const tx = url.split("/")[2]
+    return view.render('login.signTx', {transactionData: tx})
+  }
+
+  async broadcastTx({response, request}){
+    const tx = request.input('tx')
+    if(!tx){ return }
+    console.log('broadcasting:' + tx)
+    const wallet = new BtcWalletController()
+    try{
+      wallet.broadcastTx(tx)
+    } catch (e){
+      console.log(e)
+    }
   }
 
   generate(n) {

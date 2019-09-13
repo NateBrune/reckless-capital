@@ -27,11 +27,21 @@
                     <i class="fas fa-exclamation-triangle"></i>
                   </div>
                   <div class="content">
+                  @if(listingStatus[message.aboutListing] == "pending")
                     <p>
                       <small>Pay</small><strong> {{ listingStipend[message.aboutListing] }} BTC </strong> <small> to </small> <strong id="{{ 'address'+message.aboutListing }}">{{ listingAddress[message.aboutListing] }}</strong>
                       <br>
                       Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.
                     </p>
+                  @elseif(listingStatus[message.aboutListing] == "mempool")
+                    <p>
+                      Payment recieved. Awaiting confirmations
+                    </p>
+                  @else
+                    <p>
+                    Payment confirmed. Waiting for seller to confirm order and open channel. If the order is not confirmed within three days the funds may be withdrawn.
+                    </p>
+                  @endif
                   </div>
                 </div>
               </article>
@@ -46,11 +56,11 @@
             </article>
             -->
             <div class="columns">
-              <div class="column is-one-fifth">
+              <div class="column is-one-third">
                 <a class="button" onclick="toggleElement('redeemScript')">Show Redeem Script</a>
                 <p>The redeem script can be used to recover BTC in the event the website shuts down unexpectedly</p>
               </div>
-              <div class="column is-four-fifths">
+              <div class="column is-two-thirds">
                 <div id="redeemScript" style="display: none;">
                   <article class="message is-small">
                     <div class="message-header">
@@ -88,16 +98,6 @@
         </span>
         <p>{{ message.created_at }} EST</p>
         <br />
-        @if(listingStatus[message.aboutListing] != "pending")
-          <div class="columns">
-            <div class="column">
-              <a class="button is-small is-fullwidth is-success">Accept</a>
-            </div>
-            <div class="column">
-              <a class="button is-small is-fullwidth is-danger">Deny</a>
-            </div>
-          </div>
-        @endif
       </div>
     </div>
   </div>
