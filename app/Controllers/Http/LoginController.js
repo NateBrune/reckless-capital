@@ -2,9 +2,10 @@
 const User = use('App/Models/User')
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
-const Challenges = use('App/Models/Challenges')
+const Challenge = use('App/Models/Challenge')
 const { validate } = use('Validator')
 const BtcWalletController = use('App/Services/BtcWalletController')
+const Logger = use('Logger')
 
 //const bitcoin = require('bitcoinjs-lib')
 var bitcoinMessage = require('bitcoinjs-message')
@@ -75,7 +76,7 @@ class LoginController {
   async challenge ({ request, session }) {
     const url = request.url()
     const elitePublicKey = url.split("/")[2]
-    if(elitePublicKey.length !== 65){
+    if(elitePublicKey.length !== 66){ // length should be 65 for bitcoin public keys but we get 66 chars
       Logger.debug("bitch tried %s", elitePublicKey)
       throw Error("Incorrect public key length")
     }
@@ -83,7 +84,12 @@ class LoginController {
     Logger.debug("challenge for: "+ this.wallet.derriveAddressFromPublicKey(elitePublicKey))
     //const elite = await User.query().where('publicKey', elitePublicKey).first()
     const challenge = this.generate(128)
-    const userId = await Challenges.table('challenges').insert({publicKey: elitePublicKey, challenge: challenge})
+    await Challenge.query().where('publicKey', elitePublicKey).delete()
+    //const userId = await Challenge.table('challenges').insert({publicKey: elitePublicKey, challenge: challenge})
+    var newChallenge = new Challenge()
+    newChallenge.publicKey = elitePublicKey
+    newChallenge.challenge = challenge
+    await newChallenge.save()
     /*
     if(elite === null){
       const eliteAddress = this.wallet.derriveAddressFromPublicKey(elitePublicKey)
@@ -106,33 +112,78 @@ class LoginController {
     return challenge
   }
 
+  async usernameTaken(username){
+    const usernameCount = await User.query().where('username', username).count()
+    return usernameCount[0]['count(*)']
+  }
+
   async verify ({ auth, request, response, session }) {
-    console.log("in verify")
     const url = request.url()
-    // validate form input
     const validation = await validate(request.all(), {
       signature: 'required',
       publicKey: 'required',
       username: 'required'
     })
-
-    // show error messages upon validation fail
-    if (validation.fails()) {
-      console.log("validation failed")
+    if(validation.fails()) {
       session.withErrors(validation.messages())
               .flashAll()
       return response.redirect('back')
     }
-
-        
-    console.log("pubkey: " + request.input('publicKey'))
-    console.log("signature: " + request.input('signature'))
     const elitePublicKey = request.input('publicKey')
     const eliteSignature = request.input('signature')
-    console.log("verifying: "+elitePublicKey)
-    console.log("username: "+ request.input('username'))
-    console.log("mnemonic: "+ request.input('mnmonic'))
 
+    const challenge = await Challenge.query().where('publicKey', elitePublicKey).first()
+    // just check for the challenge, challenge must be set 
+    if(!challenge){
+      session.flash({ notification: `Couldn't find matching challenge for your public key (${elitePublicKey})`})
+      return response.redirect('/')
+    }
+    try{
+      var result = bitcoinMessage.verify(challenge.challenge.toString(), this.wallet.derriveAddressFromPublicKey(elitePublicKey), eliteSignature)
+      if(result){
+        var elite = await User.query().where('publicKey', elitePublicKey).first()
+        if(!elite){
+          elite = new User()
+          elite.publicKey = elitePublicKey
+
+          if(request.input('username')){
+            const taken = await this.usernameTaken(request.input('username'))
+            if(!taken){
+              elite.username = request.input('username')
+            } else {
+              session.flash({ notification: `Username taken, sorry.`})
+              return response.redirect('/')
+            }
+          }
+            
+          if(request.input('picture'))
+            elite.picture = request.input('picture')
+          if(request.input('email'))
+            elite.email = request.input('email')
+          if(request.input('refund'))
+            elite.refundAddress = request.input('refund')
+          
+          await elite.save() // Finish registration process
+        }
+        session.flash({ notification: 'logged in successfully'})
+        await auth.login(elite)
+        return response.redirect('/')
+
+      } else {
+        session
+        .withErrors([{ field: 'notification', message: 'Signature check failed.' }])
+        .flashAll()
+        return response.redirect('back')
+      }
+    } catch (e){
+      Logger.notice(e)
+      throw Error(`Challenge: ${challenge.challenge} Generated address: ${this.wallet.derriveAddressFromPublicKey(elitePublicKey)}`) // Facts.
+    }
+
+
+
+
+    /*
     const elite = await User.query().where('publicKey', elitePublicKey).first()
     if(elite === null){
       //return 'Attempted to verify with unknown address'
@@ -182,6 +233,7 @@ class LoginController {
         return response.redirect('back')
       }
     }
+    */
   }
 
   async logout ({ auth, response }) {

@@ -13,7 +13,7 @@ class UserSchema extends Schema {
       table.string('address', 64)
       table.string('email', 128)
       table.string('picture', 128)
-      table.string('challenge', 128)
+      //table.string('challenge', 128)
       table.integer('undisputedTxn')
       table.integer('disputedTxn')
       table.boolean('hasMail', false)

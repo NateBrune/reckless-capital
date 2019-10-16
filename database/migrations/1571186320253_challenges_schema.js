@@ -8,7 +8,7 @@ class ChallengesSchema extends Schema {
     this.create('challenges', (table) => {
       table.increments()
       table.string('publicKey', 128).notNullable().unique()
-      table.string('challenge', 128).notNullable() //unique() 
+      table.string('challenge', 128).notNullable() //unique()  // must remain notNullable()
       table.timestamps()
     })
   }

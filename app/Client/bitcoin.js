@@ -95,10 +95,8 @@ window.signWithMnemonic = function (mnemonic, message){
     const seed = bip39.mnemonicToSeedSync(mnemonic.toString());
     const node = bip32.fromSeed(seed);
     var child = node.derivePath(path)
-    //this.console.log(child.toWIF())
     var keyPair = bitcoin.ECPair.fromWIF(child.toWIF())
     var privateKey = keyPair.privateKey
-    //this.console.log("signing with public key: "+ child.publicKey.toString('hex'))
     var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: bitcoin.networks.regtest })
     return signature.toString('base64')
   } catch(e){
