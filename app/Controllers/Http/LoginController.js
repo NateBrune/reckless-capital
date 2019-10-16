@@ -2,7 +2,8 @@
 const User = use('App/Models/User')
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
-
+const Challenges = use('App/Models/Challenges')
+const { validate } = use('Validator')
 const BtcWalletController = use('App/Services/BtcWalletController')
 
 //const bitcoin = require('bitcoinjs-lib')
@@ -10,9 +11,21 @@ var bitcoinMessage = require('bitcoinjs-message')
 
 class LoginController {
 
+  constructor(){
+    this.wallet = new BtcWalletController()
+  }
+
   async index ({ view }) {
     return view.render('login.index')
   }
+  async signup ({ view }) {
+    return view.render('login.signup')
+  }
+
+  async createAccout ({auth, session, request, response}) {
+    
+  }
+
   async settings ({ view }) {
     return view.render('login.settings')
   }
@@ -34,11 +47,12 @@ class LoginController {
     elite.username = request.input('username')
     elite.picture = request.input('picture')
     elite.refundAddress = request.input('refundAddress')
+    elite.email = request.input('email')
     elite.save()
     console.log(request.input('picture'))
     session.flash({ notification: 'Profile settings saved.'})
     
-    await Listing.query().where('sellerAddress', elite.address).update({
+    await Listing.query().where('sellerPublicKey', elite.publicKey).update({
       username: elite.username,
       picture: elite.picture
     })
@@ -61,49 +75,100 @@ class LoginController {
   async challenge ({ request, session }) {
     const url = request.url()
     const elitePublicKey = url.split("/")[2]
-    const wallet = new BtcWalletController()
-    console.log("challenge for: "+ wallet.derriveAddressFromPublicKey(elitePublicKey))
-    const elite = await User.query().where('publicKey', elitePublicKey).first()
+    if(elitePublicKey.length !== 65){
+      Logger.debug("bitch tried %s", elitePublicKey)
+      throw Error("Incorrect public key length")
+    }
+    //console.log()
+    Logger.debug("challenge for: "+ this.wallet.derriveAddressFromPublicKey(elitePublicKey))
+    //const elite = await User.query().where('publicKey', elitePublicKey).first()
     const challenge = this.generate(128)
+    const userId = await Challenges.table('challenges').insert({publicKey: elitePublicKey, challenge: challenge})
+    /*
     if(elite === null){
-      console.log("new user: " + elitePublicKey)
-      const eliteAddress = wallet.derriveAddressFromPublicKey(elitePublicKey)
+      const eliteAddress = this.wallet.derriveAddressFromPublicKey(elitePublicKey)
       const user = new User()
       user.username = null
       user.publicKey = elitePublicKey
       user.address = eliteAddress
       user.picture = null
       user.challenge = challenge
+      user.undisputedTxn = 0
+      user.disputedTxn = 0
       await user.save()
+      console.log("new user: " + elitePublicKey)
     } else {
       elite.challenge = challenge
       await elite.save()
     }
+    */
+
     return challenge
   }
 
   async verify ({ auth, request, response, session }) {
+    console.log("in verify")
     const url = request.url()
-    
+    // validate form input
+    const validation = await validate(request.all(), {
+      signature: 'required',
+      publicKey: 'required',
+      username: 'required'
+    })
+
+    // show error messages upon validation fail
+    if (validation.fails()) {
+      console.log("validation failed")
+      session.withErrors(validation.messages())
+              .flashAll()
+      return response.redirect('back')
+    }
+
+        
+    console.log("pubkey: " + request.input('publicKey'))
+    console.log("signature: " + request.input('signature'))
     const elitePublicKey = request.input('publicKey')
-    const eliteSignature = Buffer.from(request.input('signature'))
+    const eliteSignature = request.input('signature')
     console.log("verifying: "+elitePublicKey)
+    console.log("username: "+ request.input('username'))
+    console.log("mnemonic: "+ request.input('mnmonic'))
+
     const elite = await User.query().where('publicKey', elitePublicKey).first()
     if(elite === null){
       //return 'Attempted to verify with unknown address'
+      console.log("Attempted to verify with unknown address")
+      session
+      .withErrors([{ field: 'notification', message: "Attempted to verify with unknown address" }])
+      .flashAll()
       return response.redirect('back')
     } else {
+      if(elite.username && elite.username != request.input('username')){
+        session
+        .withErrors([{ field: 'notification', message: "Attempted to verify with unknown username" }])
+        .flashAll()
+        return response.redirect('back')
+      }
       
       var result = false
-      const wallet = new BtcWalletController()
+      
       try{
-        result = bitcoinMessage.verify(elite.challenge.toString(), wallet.derriveAddressFromPublicKey(elitePublicKey).toLowerCase(), eliteSignature)
+        result = bitcoinMessage.verify(elite.challenge.toString(), this.wallet.derriveAddressFromPublicKey(elitePublicKey).toLowerCase(), eliteSignature)
       } catch (e){
         console.log("error: ")
         console.log(e)
       }
 
       if(result){
+        console.log(result)
+        if(request.input('username'))
+          elite.username = request.input('username')
+        if(request.input('picture'))
+          elite.picture = request.input('picture')
+        if(request.input('email'))
+          elite.email = request.input('email')
+        if(request.input('refund'))
+          elite.refundAddress = request.input('refund')
+        await elite.save()
         session.flash({ notification: 'logged in successfully'})
         console.log(elite.address + " logged in")
         await auth.login(elite)
@@ -133,13 +198,8 @@ class LoginController {
   async broadcastTx({response, request}){
     const tx = request.input('tx')
     if(!tx){ return }
-    console.log('broadcasting:' + tx)
-    const wallet = new BtcWalletController()
-    try{
-      wallet.broadcastTx(tx)
-    } catch (e){
-      console.log(e)
-    }
+    this.wallet.broadcastTx(tx).reject((reason)=>{console.log(`failed to broadcast tx: ${tx}\r\n${reason}`)})
+    return view.redirect('/offers')
   }
 
   generate(n) {

@@ -8,47 +8,71 @@
       {{ csrfField() }}
 
         <!–– Owner's public key ––>
-      <div class="field has-addons">
+      <div class="field">
+        <label class="label"> Lightning Address - The public address of your node. <a href="img/lnaddress.png"> View example on Casa node. </a> </label>
         <div class="control has-icons-left is-expanded">
-          <input class="input" type="text" name="owner" value="{{ old('owner', '') }}" placeholder="Owner">
+          <input class="input" type="text" name="owner" value="{{ old('owner', '') }}" placeholder="Lightning Address e.g. 02672017ca6ef11a6c347179151365d50f23279b5c741111bdccde6ecbcbe72ecf@lnnv64gja8nkhztf5cvlul3jylvi6fc76l5si2sutga2qb6zcab124qd.onion:9735 ">
           <span class="icon is-small is-left">
             <i class="fas fa-key"></i>
           </span>
         </div>
       </div>
-
+      <!--
+      <div class="content is-medium">
+        <h1> Terms </h1>
+        <ul>
+          <li> Inbound Capacity - Amount of Bitcoin available to open a channel. <a href="img/inbound.png"> View example on Casa node. </a> </ui>
+          <li> Fee - Amount of Bitcoin you will charge to open a channel to a customer. A 0.5% fee will be charged on top of this for the purposes of facilitating the transaction. </ui>
+        </ul>
+      </div>
+      -->
         <!–– How much LSat you have ––>
-      <div class="field has-addons">
+      <div class="field">
+        <label class="label"> Inbound Capacity - Amount of Bitcoin available to open a channel. <a href="img/inbound.png"> View example on Casa node </a>
+        <br>
+        The largest possible Lighting Network channel size at the moment is 0.16777215 BTC.
+        
+        </label>
         <div class="control has-icons-left">
-          <input class="input" type="text" name="hasLSAT" value="{{ old('hasLSAT', '') }}" placeholder="Liquidity">
+          <input class="input" type="text" id="wealth" name="hasLSAT" value="{{ old('hasLSAT', '') }}" oninput="update()" placeholder="Available inbound capacity e.g. 0.16">
           <span class="icon is-small is-left">
             <i class="fab fa-btc"></i>
           </span>
         </div>
+      </div>
   
         <!–– How much the owner wants for it ––>
+      <div class="field">
+        <label class="label"> Fee - Amount of Bitcoin you will charge to open a channel to a customer. A 0.5% fee will be charged on top of this for the purposes of facilitating the transaction.</label>
         <div class="control has-icons-left">
-          <input class="input" type="text" name="stipend" value="{{ old('stipend', '') }}" placeholder="Fee">
+          <input class="input" type="text" id="stipend" name="stipend" value="{{ old('stipend', '') }}" oninput="update()" placeholder="Fee">
           <span class="icon is-small is-left">
             <i class="fab fa-btc"></i>
           </span>
         </div>
+      </div>
+      <div class="field">
+        <label class="label"> Period - Term of your channel. The period of time the sold channel will be open and operable.</label>
+        <input type="number" id="period" name="period" oninput="update()" min="1" max="90">
+        <label> Days </label>
+      </div>
 
         <!–– Place Listing ––>
-        <div class="control">
-          <button type="submit" class="button is-primary">
+        <div class="control is-expanded">
+          <button type="submit" class="button is-medium is-fullwidth is-primary">
               Add Listing
           </button>
         </div>
-      </div>
       
       <!–– Address used to create this listing ––>
       <div class="control">
         <input class="input" type="hidden" name="elite" value="{{ auth.user.address }}">
       </div>
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('owner'), hasErrorFor('owner')) }}
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('hasLSAT'), hasErrorFor('hasLSAT')) }}
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('stipend'), hasErrorFor('stipend')) }}
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('period'), hasErrorFor('period')) }}
     </form>
   </div>
   @if(old('notification'))
@@ -56,4 +80,29 @@
         {{ old('notification') }}
     </div>
   @endif
+  <div class="box">
+    <div class="content">
+      <h1> Final Offer </h1>
+      <p> Liquidity Fee: <label id="twealth"></label> lBTC for a stipend of <label id="tstipend"></label> BTC </p>
+      <p> Service Fee: <label id="tservicefee"></label> BTC</p>
+      <p> Total fees for buyer: <label id="ttotalfee"></label></p>
+      <p> In order to earn the reward, you must keep the channel open for <label id="tdays"></label> days after the order is accepted.</p>
+    </div>
+  </div>
+
+  <script>
+  function roundUp(num, precision) {
+    precision = Math.pow(10, precision)
+    return Math.ceil(num * precision) / precision
+  }
+  function update(){
+    document.getElementById("twealth").innerHTML = new Number(document.getElementById("wealth").value).toFixed(8)
+    document.getElementById("tstipend").innerHTML = new Number(document.getElementById("stipend").value).toFixed(8)
+    document.getElementById("tservicefee").innerHTML = roundUp( (new Number(document.getElementById("stipend").value) * 100000000 * 0.005 / 100000000),8).toFixed(8)
+    document.getElementById("ttotalfee").innerHTML = (new Number(document.getElementById("tservicefee").innerHTML) + new Number(document.getElementById("tstipend").innerHTML)).toFixed(8)
+    document.getElementById("tdays").innerHTML = document.getElementById("period").value
+  }
+
+  </script>
+
   @endsection

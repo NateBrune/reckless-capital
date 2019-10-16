@@ -1,30 +1,61 @@
 @layout('offersTemplate')
 
 @section('content')
+<script src="https://momentjs.com/downloads/moment.js"></script>
 <script>
-  function CopyToClipboard(containerid) {
-  if (document.selection) { 
-      document.selection.empty();
-      var range = document.body.createTextRange();
-      range.moveToElementText(document.getElementById(containerid));
-      range.select().createTextRange();
-      document.execCommand("copy");
 
-  } else if (window.getSelection) {
-      window.getSelection().removeAllRanges()
-      var range = document.createRange();
-      range.selectNode(document.getElementById(containerid));
-      window.getSelection().addRange(range);
-      document.execCommand("copy");
-      alert("copied")
-  }}
+  function CopyToClipboard(containerid) {
+    if (document.selection) { 
+        document.selection.empty();
+        var range = document.body.createTextRange();
+        range.moveToElementText(document.getElementById(containerid));
+        range.select().createTextRange();
+        document.execCommand("copy");
+
+    } else if (window.getSelection) {
+        window.getSelection().removeAllRanges()
+        var range = document.createRange();
+        range.selectNode(document.getElementById(containerid));
+        window.getSelection().addRange(range);
+        document.execCommand("copy");
+        alert("copied")
+    }
+  }
   function toggleElement(containerid) {
     var x = document.getElementById(containerid)
     if (x.style.display === "none") {
-      x.style.display = "block";
+      x.style.display = "flex";
     } else {
       x.style.display = "none";
     }
+  }
+
+  function getQuote(containerid) {
+    var ar = new Array(20)
+    ar[0] = "An investment in knowledge pays the best interest. --Benjamin Franklin"
+    ar[1] = "A nickel ain't worth a dime anymore. --Yogi Berra"
+    ar[2] = "Anything that can go wrong will go wrong. --Edward A. Murphy"
+    ar[3] = "And Jesus entered the temple and drove out all those who were buying and selling in the temple, and overturned the tables of the money changers and the seats of those who were selling doves. --Matthew 21:12"
+    ar[4] = "If there is a worse time for something to go wrong, it will happen then."
+    ar[5] = "If anything simply cannot go wrong, it will anyway."
+    ar[6] = "If you perceive that there are four possible ways in which a procedure can go wrong, and circumvent these, then a fifth way, unprepared for, will promptly develop."
+    ar[7] = "Left to themselves, things tend to go from bad to worse."
+    ar[8] = "If everything seems to be going well, you have obviously overlooked something."
+    ar[9] = "Nature always sides with the hidden flaw."
+    ar[10] = "Mother nature is a bitch."
+    ar[11] = "It is impossible to make anything foolproof because fools are so ingenious."
+    ar[12] = "Whenever you set out to do something, something else must be done first."
+    ar[13] = "Every solution breeds new problems."
+    ar[14] = "Trust everybody ... then cut the cards."
+    ar[15] = "Two wrongs are only the beginning."
+    ar[16] = "If at first you don't succeed, destroy all evidence that you tried."
+    ar[17] = "To succeed in politics, it is often necessary to rise above your principles."
+    ar[18] = "Exceptions prove the rule ... and wreck the budget."
+    ar[19] = "Success always occurs in private, and failure in full view."
+
+    var now = new Date()
+    var sec = now.getSeconds()
+    document.getElementById(containerid).innerHTML = ar[sec % 20]
   }
 </script>
 {{ script('js/qrcode.js') }}
@@ -56,9 +87,9 @@
   @each(message in messages)
   @if(message.msgType != 0)
     @if(message.receiverAddress == auth.user.address)
-      @!component('components.pendingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, csrfField = csrfField)
+      @!component('components.pendingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, lnAddress = lnAddress, listingOpenBy = listingOpenBy, listingSellerRefundAddress = listingSellerRefundAddress, csrfField = csrfField)
     @else
-      @!component('components.payingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingLiquidity = listingLiquidity, csrfField = csrfField, QRCode = QRCode)
+      @!component('components.payingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, listingBuyerRefundAddress = listingBuyerRefundAddress, listingOpenBy = listingOpenBy, calculatedTotalSats = calculatedTotalSats, csrfField = csrfField, QRCode = QRCode)
     @endif
   @endif
   @endeach

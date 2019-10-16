@@ -1,13 +1,5 @@
 function loginElite(){
-  var username = document.getElementById("username").value
-  var password = document.getElementById("password").value
-  var csrf = document.getElementById("_csrf").value
-  const publicKey = derivePubKey(username, password, 0)
-  const privateKey = derivePrivateKey(username, password, 0)
-  localStorage.setItem('privateKey', privateKey);
-  localStorage.setItem('publicKey', publicKey)
-  const challenge = httpGet("challenge/" + publicKey)
-  const signature = signString(privateKey, challenge)
+  const signature = signWithMnemonic(privateKey, challenge)
   result = httpPost("verify", {publicKey: publicKey, signature: signature, _csrf: csrf})
   window.location = "/"
 }

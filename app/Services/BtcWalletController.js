@@ -1,22 +1,27 @@
 'use strict'
 const bitcoin = require('bitcoinjs-lib')
 const { RegtestUtils } = require('regtest-client')
-const Client = require('bitcoin-core');
+const Client = require('bitcoin-core')
+const LndGrpc = require('lnd-grpc')
+var Env = use('Env')
 
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
-const Env = use('Env')
+
 const serverWif = Env.get('SERVER_WIF')
-
-
+const HOST = Env.get('BTCD_HOST')
+const PORT = Env.get('BTCD_PORT')
+const PASS = Env.get('LND_PASS')
+const SERVERADDRESS = Env.get('SERVER_ADDRESS')
 const TESTNET = bitcoin.networks.testnet
 const client = new Client({
   network: 'regtest',
-  host: '127.0.0.1',
-  port: 8332,
-  username: 'bitcoins',
-  password: 'rule',
-  version: '0.18.0'
+  host: HOST,
+  //port: 8332,
+  port: PORT,
+  username: 'lnd',
+  password: 'lightning',
+  version: '0.18.1'
 });
 
 //client.set('user', 'bitcoinrpc')
@@ -29,6 +34,74 @@ const regtestUtils = new RegtestUtils(bitcoin, { APIPASS, APIURL })
 const regtest = regtestUtils.network;
 
 class BtcWalletController {
+  constructor(){
+    this.grpc = null
+  }
+
+  async connectToLnd(){
+    if(this.grpc === null){
+      this.grpc = new LndGrpc({
+        host: 'localhost:10009',
+        cert: '~/app-container/.lnd/tls.cert',
+        macaroon: '~/app-container/.lnd/data/chain/bitcoin/regtest/admin.macaroon',
+      })
+
+      await this.grpc.connect()
+      console.log("grpc state: " + this.grpc.state)
+    }
+  }
+
+  async unlockLndWallet(){
+    // non-functional Error: invalid passphrase for master public key
+    /*
+    const { WalletUnlocker } = this.grpc.services
+    console.log("unlockwallet state: " + this.grpc.state)
+    if (this.grpc.state === "locked") {
+      await WalletUnlocker.unlockWallet({ wallet_password: PASS })
+    
+      console.log("State of unlock: " + this.grpc.state) // active
+    }
+    */
+  }
+
+  async getInfo(){
+    const { Lightning } = this.grpc.services
+    var info = await Lightning.getInfo()
+    console.log("getInfo: " + info)
+  }
+
+  async getNodeInfo(pubkey){
+    const { Lightning } = this.grpc.services
+    try{
+      var info = await Lightning.getNodeInfo({pub_key: pubkey, include_channels: true})
+      return info
+    } catch(e){ 
+      throw e
+    }
+    
+    
+  }
+
+  async connectPeerLND(lnaddress){
+    const { Lightning } = this.grpc.services
+    //console.log(Lightning)
+    try{
+      var info = await Lightning.connectPeer({addr: {pubkey: lnaddress.split('@')[0], host:  lnaddress.split('@')[1]}})
+      console.log(info)
+      return true
+    } catch(e){
+      if(e.message.includes('already connected to peer') || e.message.includes('cannot make connection to self')){
+        console.log("connected to live node so returning true")
+        return true
+      } else {
+        console.log("failed to connect to peer:")
+        console.log(e)
+        return false
+      }
+    }
+    
+    console.log("connectpeer: " + info)
+  }
 
   derriveServerKeyPair(id){
     if(id == null) { except("id cannot be null!")}
@@ -98,7 +171,9 @@ class BtcWalletController {
             const message = await Message.query().where('aboutListing', listing.id).first()
             if(message === null ) { console.log("recieved payment, but couldn't find buy message. Bad sign!?"); return }
             //console.log(detail)
-            if(listing.stipend <= detail['amount']){
+            var totalpay = new Number(listing.stipend + listing.servicefee).toFixed(8)
+            console.log(totalpay + ":" + listing.stipend + listing.servicefee)
+            if(totalpay <= detail['amount']){
               if(listing.inMempool == false && listing.funded == false){
                 listing.inMempool = true
                 listing.save()
@@ -111,7 +186,12 @@ class BtcWalletController {
                 listing.funded = true
                 listing.fundingTransactionHash = txid
                 listing.fundingTransactionVout = detail['vout']
-                listing.fundingTransactionAmount = new Number(detail['amount']) * 100000000
+                listing.fundingTransactionAmount = Math.round(new Number(detail['amount']) * 100000000)
+                var totalSats = Math.round(new Number(detail['amount']) * 100000000)
+                var extra = totalSats - Math.round(new Number(listing.stipend) * 100000000) - Math.round(new Number(listing.servicefee) * 100000000 ) 
+                listing.fundingTransactionExtra = extra
+                listing.lastChanceToAccept = ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0)
+                console.log("funded: "+ listing.fundingTransactionAmount)
                 listing.save()
                 message.message = "funded:"+listing.fundingAddress+":"+listing.redeemScript
                 message.save()
@@ -135,14 +215,25 @@ class BtcWalletController {
     }
   }
 
-  async refundListing(id, refundAddress){
-    const listing = await Listing.find(id)
+  async refundListing(id, refundAddress, resetListing){
+    console.log("looking up listing: "+ id)
+    var listing = await Listing.find(id)
     if(listing == null ) { return new Error("Invalid listing id specified. Couldn't find listing.")}
-    const FEE = 100009
     const serverKeyPair = this.derriveServerKeyPair(id)
     const psbt = new bitcoin.Psbt({ network: regtest })
     psbt.setVersion(2); // These are defaults. This line is not needed.
     psbt.setLocktime(0); // These are defaults. This line is not needed.
+    console.log("input value: " + listing.fundingTransactionAmount)
+
+    // Pay stipend
+    var stipendSats = Math.round(new Number(listing.stipend) * 100000000)
+    var feeSats = Math.round(new Number(listing.servicefee) * 100000000)
+    var extraSats = new Number(listing.fundingTransactionExtra)
+    var totalSats = stipendSats + feeSats + extraSats
+    var minfee = Math.round(totalSats * 0.00001) //relayfee on mainnet TODO: fix fee calculation
+    console.log(`${stipendSats} ${feeSats} ${extraSats} ${totalSats} ${minfee}`)
+    var FEE = (1*180 + 2*34 + 10)*5
+    console.log(`fee set to: ${FEE}, could be set to ${minfee}`)
     psbt.addInput({
       hash: listing.fundingTransactionHash,
       index: listing.fundingTransactionVout, //0,
@@ -160,23 +251,79 @@ class BtcWalletController {
       //   redeemScript. A Buffer of the redeemScript for P2SH
       //   witnessScript. A Buffer of the witnessScript for P2WSH
     });
-    psbt.addOutput({
-      address: refundAddress,
-      value: listing.fundingTransactionAmount - FEE,
-    });
+    try{
+      if(resetListing){
+        console.log("no servicefee: refunding for " + totalSats + " - network fee("+FEE+")")
+        psbt.addOutput({
+          address: refundAddress,
+          value: totalSats - FEE
+        })
+      } else {
+        var customerSats = stipendSats + extraSats - FEE
+        console.log(`customer profits ${customerSats} we profit ${feeSats}`) 
+        var customerRefundOutput = {
+          address: refundAddress,
+          value: customerSats
+        }
+        var serviceFeeOutput = {
+          address: SERVERADDRESS,
+          value: feeSats
+        }
+        psbt.addOutputs([customerRefundOutput, serviceFeeOutput]);
+      }
+
+    } catch (e){
+      console.log(e)
+      throw e 
+    }
     //console.log(listing)
     psbt.signInput(0, serverKeyPair);
+
+    if(resetListing){
+      await this.resetListing(id)
+    }
+      
+    //await Message.query().where('aboutListing', id).delete()
+    await Message.query().where('aboutListing', id).update({
+      archived: true
+    })
     return psbt.toHex()
   }
 
-  broadcastTx(hexTx){
+  async resetListing(id){
+    var listing = await Listing.find(id)
+
+    //await Message.query().where('aboutListing', id).delete()
+    listing.accepted = false
+    listing.pendingAccept = false
+    listing.inMempool = false
+    listing.funded = false
+    listing.fundingAddress = null
+    listing.fundingTransactionAmount = null
+    listing.fundingTransactionVout = null
+    listing.fundingTransactionHash = null
+    listing.buyerPublicKey = null
+    listing.buyerAddress = null
+    listing.output = null
+    listing.redeemScript = null
+    listing.buyerRedeemable = false
+    listing.sellerRedeemable = false
+    listing.channelOpen = false
+    listing.channelMustBeOpenUntil = null
+    listing.lastChanceToOpenChannel = null
+    listing.lastChanceToAccept = false
+    listing.consecutiveFailedCheckups = 0
+    await listing.save()
+  }
+
+  async broadcastTx(hexTx){
     const tx = bitcoin.Psbt.fromHex(hexTx)
     console.log('tx sigs valid: ' + tx.validateSignaturesOfAllInputs())
     console.log("and now for what you've all been waiting for: ")
     try{
       tx.finalizeAllInputs()
       console.log("tx is valid >:)")
-      const result = client.sendRawTransaction({hexstring: tx.extractTransaction().toHex()})
+      return await client.sendRawTransaction({hexstring: tx.extractTransaction().toHex()})
     } catch(e){
       console.log(e)
     }

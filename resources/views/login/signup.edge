@@ -1,0 +1,128 @@
+@layout('master')
+@section('content')
+  <head>
+  <script>
+      function signChallenge (){
+      try{
+        var mnemonic = document.getElementById("mnemonic").value
+        var pubkey = document.getElementById("publicKey").value
+        getSeedFromMnemonic(mnemonic).then( seed =>{
+          
+          var addr = getAddressFromSeed(seed)
+          console.log("current pubkey:" + pubkey)
+          if(pubkey.length < 1 ){ return }
+          var challenge = httpGet("challenge/" + pubkey)
+          console.log("challenge: " + challenge)
+          var signature = signWithMnemonic(mnemonic, challenge)
+          document.getElementById("signature").value = signature.toString('hex')
+          console.log("signature: "+ signature)
+          document.forms["mainForm"].submit()
+        }, reason => {
+          console.log(reason)
+        })
+      } catch(e){
+        console.log("Critical: " + e)
+      }
+    }
+    </script>
+  </head>
+  {{ script('js/lib.js') }}
+  {{ script('js/brainwallet-login.js') }}
+  <div class="box">
+    <h2 class="title">Sign up</h2>
+    <form id="mainForm" action="/verify" method="post">
+      {{ csrfField() }}
+      <div class="field">
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" type="text" id="username" name="username" placeholder="Username" value="{{ old('username', '') }}">
+          <span class="icon is-small is-left">
+            <i class="fas fa-user-circle"></i>
+          </span>
+          <span class="icon is-small is-right">
+            <i class="fas fa-check"></i>
+          </span>
+        </p>
+      </div>
+      <div class="field">
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" type="text" id="picture" name="picture" placeholder="Profile picture" value="{{ old('picture', '') }}">
+          <span class="icon is-small is-left">
+            <i class="fas fa-image"></i>
+          </span>
+          <span class="icon is-small is-right">
+            <i class="fas fa-check"></i>
+          </span>
+        </p>
+      </div>
+      <div class="field">
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" type="email" id="email" name="email" placeholder="Email (optional)" value="{{ old('email', '') }}">
+          <span class="icon is-small is-left">
+            <i class="fas fa-envelope"></i>
+          </span>
+          <span class="icon is-small is-right">
+            <i class="fas fa-check"></i>
+          </span>
+        </p>
+      </div>
+      <div class="field">
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" type="text" id="refund" name="refund" placeholder="Refund Address (optional)" value="{{ old('email', '') }}">
+          <span class="icon is-small is-left">
+            <i class="fas fa-address-book"></i>
+          </span>
+          <span class="icon is-small is-right">
+            <i class="fas fa-check"></i>
+          </span>
+        </p>
+      </div>
+
+      <input type="hidden" name="publicKey" id="publicKey" value="" />
+      <input type="hidden" name="signature" id="signature" value="" />
+      <div class="content is-medium">
+        <h1> HD Wallet Seed </h1>
+        <p>The wallet seed is like your password. You can use it to login to this website.
+        Please take care to copy this down on your computer or on some paper. This phrase
+        should remain private as it can be used to access any bitcoins stored in contracts
+        used by this website.</p>
+      </div>
+      <div class="field has-addons">
+        <p class="control has-icons-left is-expanded">
+          <input id="mnemonic" class="input" type="text" readonly>
+          <span class="icon is-small is-left">
+            <i class="fas fa-lock"></i>
+          </span>
+        </p>
+        <div class="control">
+          <input class="button" onclick="signChallenge()" value="Submit input">
+        </div>
+      </div>
+    </form>
+    @if(old('notification'))
+      <div class="notification is-success">
+          {{ old('notification') }}
+      </div>
+    @endif 
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('email'), hasErrorFor('email')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('signature'), hasErrorFor('signature')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('picture'), hasErrorFor('picture')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('publicKey'), hasErrorFor('publicKey')) }}
+  </div>
+  <tail>
+    <script>
+    console.log("loaded tail")
+      var mnemonic = generateMnemonic()
+      saveMnemonicWif(mnemonic)
+      document.getElementById("mnemonic").value = mnemonic
+      getSeedFromMnemonic(mnemonic).then( (seed)=>{
+        console.log("got seed: "+ seed)
+        var pubkey = getPublicKeyFromSeed(seed)
+        console.log("got pubkey: " + pubkey)
+        document.getElementById("publicKey").value = pubkey
+        console.log("publicKey DOM: "+ document.getElementById("publicKey").value)
+      })
+      
+    </script>
+  </tail>
+@endsection

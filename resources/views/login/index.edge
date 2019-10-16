@@ -1,12 +1,16 @@
 @layout('master')
+
 @section('content')
   {{ script('js/lib.js') }}
   {{ script('js/brainwallet-login.js') }}
   <div class="box">
     <h2 class="title">Login</h2>
 
-    <form>
-      <input type="hidden" id="_csrf" value="{{ csrfToken }}">
+    <form name="mainForm" id="mainForm" action="/verify" method="post">
+      {{ csrfField() }}
+      <input type="hidden" name="publicKey" id="publicKey" value=""/>
+      <input type="hidden" name="signature" id="signature" value=""/>
+
       <div class="field has-addons">
         <!–– Username ––>
         <div class="control is-expanded has-icons-left">
@@ -15,10 +19,11 @@
             <i class="fas fa-smile-beam"></i>
           </span>
         </div>
-
+      </div>
+      <div class="field has-addons">
         <!–– Password ––>
         <div class="control is-expanded has-icons-left">
-          <input class="input" type="password" id="password" name="password" value="{{ old('password', '') }}" placeholder="Password">
+          <input class="input" type="password" id="mnemonic" name="mnemonic" oninput="setPublicKey()" value="{{ old('password', '') }}" placeholder="Password">
           <span class="icon is-small is-left">
             <i class="fas fa-key"></i>
           </span>
@@ -26,7 +31,7 @@
 
         <!–– Place Listing ––>
         <div class="control">
-          <button type="button" onclick="loginElite()" class="button is-primary">
+          <button type="button" onclick="signChallenge()" class="button is-primary">
               login
           </button>
         </div>
@@ -40,4 +45,41 @@
         {{ old('notification') }}
     </div>
   @endif
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('username'), hasErrorFor('username')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('signature'), hasErrorFor('signature')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('publicKey'), hasErrorFor('publicKey')) }}
+  <tail>
+    <script>
+    function setPublicKey(){
+      var mnemonic = document.getElementById("mnemonic").value
+      getSeedFromMnemonic(mnemonic).then( seed =>{
+        console.log("seed: " + seed)
+        var pubkey = getPublicKeyFromSeed(seed)
+        saveMnemonicWif(mnemonic)
+        console.log("pubkey in tail: " +pubkey)
+        document.getElementById("publicKey").value = pubkey
+      })
+    }
+
+    function signChallenge (){
+      try{
+        var mnemonic = document.getElementById("mnemonic").value
+        var pubkey = document.getElementById("publicKey").value
+        console.log("current pubkey: " + pubkey)
+        var challenge = httpGet("challenge/" + pubkey)
+        console.log("challenge: " + challenge)
+        var signature = signWithMnemonic(mnemonic, challenge)
+        document.getElementById("signature").value = signature
+        console.log("signature: " + signature)
+        var pubkey = document.getElementById("publicKey").value
+        console.log("current pubkey: " + pubkey)
+        document.forms["mainForm"].submit()
+          //var addr = getAddressFromSeed(seed)
+      } catch(e){
+        console.log("Critical: " + e)
+      }
+    }
+    </script>
+  </tail>
 @endsection

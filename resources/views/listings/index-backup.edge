@@ -6,70 +6,10 @@
           var modal = document.getElementById("modal-"+id)
           modal.classList.toggle("is-active")
         }
-        function updateURLParameter(url, param, paramVal){
-          var TheAnchor = null;
-          var newAdditionalURL = "";
-          var tempArray = url.split("?");
-          var baseURL = tempArray[0];
-          var additionalURL = tempArray[1];
-          var temp = "";
-
-          if (additionalURL) 
-          {
-            var tmpAnchor = additionalURL.split("#");
-            var TheParams = tmpAnchor[0];
-            TheAnchor = tmpAnchor[1];
-            if(TheAnchor)
-              additionalURL = TheParams;
-
-            tempArray = additionalURL.split("&");
-
-            for (var i=0; i<tempArray.length; i++)
-            {
-              if(tempArray[i].split('=')[0] != param)
-              {
-                newAdditionalURL += temp + tempArray[i];
-                temp = "&";
-              }
-            }        
-          }
-          else
-          {
-            var tmpAnchor = baseURL.split("#");
-            var TheParams = tmpAnchor[0];
-            TheAnchor  = tmpAnchor[1];
-
-            if(TheParams)
-              baseURL = TheParams;
-          }
-
-          if(TheAnchor)
-            paramVal += "#" + TheAnchor;
-
-          var rows_txt = temp + "" + param + "=" + paramVal;
-          return baseURL + "?" + newAdditionalURL + rows_txt;
-        }
-
         function loadFilter(){
-          //var sortBy = document.getElementById("sortBy").value
-          var text = document.getElementById("sortBy").value
-          var url = updateURLParameter(window.location.href, 'sortBy', text)
+          window.location.href = "/?sortBy="+document.getElementById("sortBy").innerHTML.replace("+","_")+"&min="+document.getElementById("lowend").innerHTML+"&max="+document.getElementById("highend").innerHTML
 
-          //var min = document.getElementById("min").innerHTML
-          //url = updateURLParameter(url, 'min', min)
-
-          //var max = document.getElementById("max").innerHTML
-          //url = updateURLParameter(url, 'max', max)
-
-          document.location.href = url
-          return
         }
-        
-        function loadPage(page){
-          var url = updateURLParameter(window.location.href, 'page', page)
-          document.location.href = url
-        }
-
       </script>
       <div class="card">
         <div class="card-content">
@@ -91,40 +31,42 @@
               </section>
             </div>
             <div class="column is-one-quarter">
-              <div class="field is-grouped">
-                <div class="control">
-                  <label class="label"> Sort by </label>
-                  <div class="select" id="sortByContainer">
-                    <select id="sortBy">
-                      <option value="newest">Newest</option>
-                      <option value="lowest_fee">Lowest Fee</option>
-                      <option value="longest_term">Longest Term</option>
-                      <option value="shortest_term">Shortest Term</option>
-                    </select>
+              <form id="sortForm">
+                <div class="field is-grouped">
+                  <div class="control">
+                    <label class="label"> Sort by </label>
+                    <div class="select">
+                      <select name="sortBy" id="sortBy" value="{{ old('sortBy', '') }}">
+                        <option>Newest</option>
+                        <option>Lowest_Fee</option>
+                        <option>Longest_Term</option>
+                        <option>Shortest_Term</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <!--
-              <div class="field is-grouped">
-                <div class="control">
-                  <label class="label"> Minimum Term </label>
-                  <input type="number" id="min" name="min" min="1" max="90" value="{{ old('min', '') }}"> <label> Days </label>
+                <!--
+                <div class="field is-grouped">
+                  <div class="control">
+                    <label class="label"> Minimum Term </label>
+                    <input type="number" id="min" name="min" min="1" max="90" value="{{ old('min', '') }}"> <label> Days </label>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="field is-grouped">
-                <div class="control">
-                  <label class="label"> Maximum Term </label>
-                  <input type="number" id="max" name="max" min="1" max="90" value="{{ old('max', '') }}"> <label> Days </label>
+                
+                <div class="field is-grouped">
+                  <div class="control">
+                    <label class="label"> Maximum Term </label>
+                    <input type="number" id="max" name="max" min="1" max="90" value="{{ old('max', '') }}"> <label> Days </label>
+                  </div>
                 </div>
-              </div>
-              -->
+                -->
 
-              <div class="field">
-                <p class="control">
-                  <a class="button is-link" onclick="loadFilter()">Search</a>
-                </p>
-              </div>
+                <div class="field">
+                  <p class="control">
+                    <button class="button is-link">Search</button>
+                  </p>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -144,7 +86,7 @@
         </div>
       @endif
   
-      @each(listing in listings['data'])
+      @each(listing in listings)
       @if(!listing.pendingAccept)
       <div class="box">
         <article class="media">
@@ -198,7 +140,6 @@
                           </div>
                           <br>
                           <h1> Final Deal </h1>
-                          <br>
                           <p> Buying {{ listing.hasLSAT }} BTC of capacity from {{ listing.username }}.</p>
                           <p> The seller fee will be {{ listing.stipend }} BTC </p>
                           <p> The service fee will be {{ listing.servicefee }} BTC  (0.5%)</p>
@@ -235,41 +176,6 @@
       </div>
       @endif
       @endeach
-      <div class="box">
-        <nav class="pagination" role="navigation" aria-label="pagination">
-          <a class="pagination-previous" title="This is the first page" href="{{ listings.page == 1 ? '#' : '?page=' + (listings.page - 1) }}">Previous</a>
-          <a class="pagination-next" href="{{ listings.lastPage == listings.page ? '#' : '?page=' + (listings.page + 1) }}">Next page</a>
-          <ul class="pagination-list">
-            <!--href="?page={{ page }}"-->
-            @each(page in range(1, listings.lastPage+1))
-            @if(listings.page === page)
-            <li>
-              <a class="pagination-link is-current" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{'Page ' + page}}" aria-current="page">{{ page }}</a>
-            </li>
-            @else
-            <li>
-                <a class="pagination-link" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{ 'Goto page ' + page }}">{{ page }}</a>
-              </li>
-            @endif
-            @endeach
-          </ul>
-        </nav>
-      </div>
-      <!--
-      <ul>
-        <li>
-          <a href="{{ listings.page == 1 ? '#' : '?page=' + (listings.page - 1) }}">Previous</a>
-        </li>
-        @each(page in range(1, listings.lastPage+1))
-          <li>
-            <a href="?page={{ page }}">{{ page }}</a>
-          </li>
-        @endeach
-        <li>
-          <a href="{{ listings.lastPage == listings.page ? '#' : '?page=' + (listings.page + 1) }}">Next</a>
-        </li>
-      </ul>
-      -->
       <!--
       <table class="table is-bordered is-striped is-narrow is-fullwidth is-hoverable sortable">
         <thead>

@@ -11,7 +11,7 @@
     </a>
   </div> -->
 
-  <div id="navbarBasicExample" class="navbar-menu">
+  <div id="navbar-primary" class="navbar-menu">
     <div class="navbar-start">
       <div class="navbar-item">
         <a class="button is-light" href="/">
@@ -20,7 +20,7 @@
       </div>
       @loggedIn
       <div class="navbar-item">
-        <a class="button is-light" href="new">
+        <a class="button is-light" href="/new">
           Sell Liquidity
         </a>
       </div>
@@ -30,10 +30,10 @@
     <div class="navbar-end">
     @loggedIn
       <div class="navbar-item">
-      {{ auth.user.username}}
+      {{ auth.user.username }}
       </div>
       <div class="navbar-item">
-        <a class="button is-light" href="messages">
+        <a class="button is-light" href="/messages">
           @if(auth.user.hasMail)
           <i class="fas fa-envelope-open-text"></i>
           @else
@@ -42,7 +42,7 @@
         </a>
       </div>
       <div class="navbar-item">
-        <a class="button is-light" href="offers">
+        <a class="button is-light" href="/offers">
           @if(auth.user.hasOffer)
           <i class="fas fa-folder-open"></i>
           @else
@@ -51,19 +51,29 @@
         </a>
       </div>
       <div class="navbar-item">
-        <a class="button is-light" href="settings">
-          <i class="fas fa-user-circle"></i>
+        <a class="button is-light" href="/settings">
+          <!--<figure class="image is-28x28">-->
+          <!--<img class="is-rounded" src="{{ auth.user.picture }}" alt="img/profile.png"></img>-->
+          <img class="is-rounded" style="object-fit:cover; border-radius:50%;" src="{{ auth.user.picture }}" alt="img/profile.png"></img>
+          <!--</figure>-->
         </a>
       </div>
       <div class="navbar-item">
-        <a class="button is-light" href="logout">
+        <a class="button is-light" href="/logout">
           Log out
         </a>
       </div>
     @else
       <div class="navbar-item">
         <div class="buttons">
-          <a class="button is-light" href="login">
+          <a class="button is-light" href="/signup">
+            Create new account
+          </a>
+        </div>
+      </div>
+      <div class="navbar-item">
+        <div class="buttons">
+          <a class="button is-light" href="/login">
             Log in
           </a>
         </div>

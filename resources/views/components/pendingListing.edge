@@ -3,7 +3,7 @@
       <div class="media">
         <div class="media-left">
           <figure class="image is-48x48">
-            <img class="is-rounded" src="{{ message.senderPicture }}" alt="Placeholder image">
+            <img class="is-rounded" src="{{ message.senderPicture }}" alt="img/profile.png">
           </figure>
         </div>
         <div class="media-content">
@@ -20,34 +20,84 @@
       <div class="content">
         <div class="columns">
           <div class="column is-four-fifths">
+            @if(listingStatus[message.aboutListing] == "sellerredeemable")
+            <p>
+                Please click the button below to withdraw your funds to your payment address. ({{ listingSellerRefundAddress[message.aboutListing] }})
+            </p>
+            <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
+            @else
             <article class="message is-small">
               <div class="message-header">
                 <p class="is-relative">Redeem Script</p>
               </div>
               <!-- On one line to remove newline while copying div -->
-              <div id="{{ 'div'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ redeemScripts[message.aboutListing] }}</strong></div>
+              <div id="{{ 'redeemScriptdiv-'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ redeemScripts[message.aboutListing] }}</strong></div>
             </article>
+            <article class="message is-small">
+              <div class="message-header">
+                <p class="is-relative">Lightning Address</p>
+              </div>
+              <!-- On one line to remove newline while copying div -->
+              <div id="{{ 'lnmsgdiv-'+message.aboutListing }}" class="message-body" style="word-wrap: break-word">
+                Please open a channel with {{ listingLiquidity[message.aboutListing] }} lBTC capacity to 
+              <div id="{{ 'lnaddressdiv-'+message.aboutListing }}" ><strong>{{ lnAddress[message.aboutListing] }}</strong></div>
+              </div>
+            </article>
+            @endif
           </div>
           <div class="column is-one-fifth ">
-            <div class="notification is-warning">
-              <center>Payment is {{ listingStatus[message.aboutListing] }}.</center>
+            @if(listingStatus[message.aboutListing] == "channelopen")
+            <div class="notification is-success">
+              <center>Channel is open, wait until <p id="{{ 'until-'+message.aboutListing }}"></p> to close the channel </center>
+              <script>   
+                document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+              </script>
             </div>
-            <progress class="progress is-warning" max="100"></progress>
+            @elseif(listingStatus[message.aboutListing] == "channelclosed")
+            <div class="notification is-warning">
+              <center>Channel prematurely closed please reopen immediately to avoid loosing reward.</center>
+            </div>
+            @elseif(listingStatus[message.aboutListing] == "buyerredeemable")
+            <div class="notification is-danger">
+              <center>Offer closed. Reward lost.</center>
+            </div>
+            <p> Channel was closed before {{ listingOpenUntil[message.aboutListing] }} <p id="{{ 'until2-'+message.aboutListing }}"/></p>
+            <script>   
+                document.getElementById("{{ 'until2-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+            </script>
+            @elseif(listingStatus[message.aboutListing] == "sellerredeemable")
+            <div class="notification is-light">
+              <center>Complete!</center>
+            </div>
+            <p> You have {{ listingStipend[message.aboutListing] }} BTC waiting to be redeemed.</p>
+            @else
+            <div class="notification is-warning">
+              @if(listingStatus[message.aboutListing] == "accepted")
+                <center>Accepted. Please open a channel to the Lightning Address by the time listed below.</center>
+                <center><p id="{{ 'openBy-'+message.aboutListing }}"/></p></center>
+                <script>   
+                    document.getElementById("{{ 'openBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenBy[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+                </script>
+              @else 
+                <center>Payment is {{ listingStatus[message.aboutListing] }}.</center>
+              @endif
+            </div>
+            @endif
+            @if(listingStatus[message.aboutListing] == "funded" || listingStatus[message.aboutListing] == "mempool" || listingStatus[message.aboutListing] == "accepted")
+              <progress class="progress is-warning" max="100"></progress>
+            @endif
             
           </div>
         </div>
         <span class="is-pulled-right">
-          <p>Copy redeem script <i class="fas fa-copy" onclick="CopyToClipboard('{{ 'div'+message.aboutListing }}')"></i></p>
+          <p>Copy Lightning Address <i class="fas fa-copy" onclick="CopyToClipboard('{{ 'lnaddressdiv-'+message.aboutListing }}')"></i></p>
         </span>
         <p>{{ message.created_at }} EST</p>
         <br />
-        @if(listingStatus[message.aboutListing] != "pending")
+        @if(listingStatus[message.aboutListing] == "funded")
           <div class="columns">
             <div class="column">
-              <form action="{{ 'acceptListing/' + message.id }}" method="POST">
-                {{ csrfField() }}
-                <a onclick='this.parentNode.submit();' class="button is-small is-fullwidth is-success">Accept</a>
-              </form>
+              <a href="{{ '/acceptListing/' + message.aboutListing }}" class="button is-small is-fullwidth is-success">Accept</a>
             </div>
             <div class="column">
               <a class="button is-small is-fullwidth is-danger" href={{ 'declineListing/' + message.aboutListing }}>Deny</a>

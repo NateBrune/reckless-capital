@@ -3,12 +3,12 @@
       <div class="media">
         <div class="media-left">
           <figure class="image is-48x48">
-            <img class="is-rounded" src="{{ message.senderPicture }}" alt="Placeholder image">
+            <img class="is-rounded" src="{{ message.receiverPicture }}" alt="img/profile.png">
           </figure>
         </div>
         <div class="media-content">
-          <p class="title is-4">{{ message.senderUsername }}</p>
-          <p class="subtitle is-6">{{ message.senderAddress }}</p>
+          <p class="title is-4">{{ message.receiverUsername }}</p>
+          <p class="subtitle is-6">{{ message.receiverAddress }}</p>
         </div>
       <div class="media-right">
         <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
@@ -18,8 +18,10 @@
       </div>
       </div>
       <div class="content">
+<!--      @if(listingStatus[message.aboutListing] == "pending" || listingStatus[message.aboutListing] == "funded" || listingStatus[message.aboutListing] == "mempool") -->
         <div class="columns">
           <div class="column is-four-fifths">
+<!--      @endif -->
             <div class="box">
               <article class="media">
                 <div class="media-content">
@@ -29,18 +31,48 @@
                   <div class="content">
                   @if(listingStatus[message.aboutListing] == "pending")
                     <p>
-                      <small>Pay</small><strong> {{ listingStipend[message.aboutListing] }} BTC </strong> <small> to </small> <strong id="{{ 'address'+message.aboutListing }}">{{ listingAddress[message.aboutListing] }}</strong>
+                      <small>Pay</small><strong> {{ calculatedTotalSats[message.aboutListing] }} BTC </strong> <small> to </small> the address below. Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.
                       <br>
-                      Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.
+                      <strong id="{{ 'address'+message.aboutListing }}">{{ listingAddress[message.aboutListing] }}</strong>
+
+                      
+                      
                     </p>
                   @elseif(listingStatus[message.aboutListing] == "mempool")
                     <p>
                       Payment recieved. Awaiting confirmations
                     </p>
-                  @else
+                  @elseif(listingStatus[message.aboutListing] == "funded")
                     <p>
-                    Payment confirmed. Waiting for seller to confirm order and open channel. If the order is not confirmed within three days the funds may be withdrawn.
+                      Payment confirmed. Waiting for seller to accept order and open channel. If the order is not confirmed within three days the funds may be withdrawn.
                     </p>
+                  @elseif(listingStatus[message.aboutListing] == "channelopen")
+                    <p>
+                      Everything looks good from here.
+                      <p id="{{ 'satoshiquote-'+message.aboutListing }}"></p>
+                    </p>
+                    <script>getQuote("{{ 'satoshiquote-'+message.aboutListing }}")</script>
+                  @elseif(listingStatus[message.aboutListing] == "channelclosed")
+                    <p>
+                      Channel was closed, a refund will occur if this channel misses three checks in a row.
+                    </p>
+                  @elseif(listingStatus[message.aboutListing] == "accepted")
+                    <p>
+                      Order accepted. Waiting for seller to open channel. If the channel is not opened by time below the funds may be withdrawn.
+                      <p id="{{ 'until2-'+message.aboutListing }}"></p>
+                    </p>
+                    <script>   
+                      document.getElementById("{{ 'until2-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenBy[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+                    </script>
+                  @elseif(listingStatus[message.aboutListing] == "buyerredeemable")
+                    <p>
+                      Bad news, seller has prematurely closed their channel. Their reputation will be negatively affected. 
+                      <br>
+                      Please click the button below to withdraw your funds to your payment address. ({{ listingBuyerRefundAddress[message.aboutListing] }})
+                    </p>
+                    <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
+                    <br>
+                    <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
                   @endif
                   </div>
                 </div>
@@ -55,26 +87,36 @@
               <div id="{{ 'address'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ listingAddress[message.aboutListing] }}</strong></div>
             </article>
             -->
-            <div class="columns">
+            <a class="button is-medium is-grey-light is-fullwidth" onclick="{{ 'toggleElement("redeemScript-' + message.aboutListing +'")' }}">Show Redeem Script</a>
+            <div class="columns" id="{{ 'redeemScript-' + message.aboutListing }}" style="display: none;">
               <div class="column is-one-third">
-                <a class="button" onclick="toggleElement('redeemScript')">Show Redeem Script</a>
+                <!-- <a class="button" onclick="toggleElement('redeemScript')">Show Redeem Script</a> -->
                 <p>The redeem script can be used to recover BTC in the event the website shuts down unexpectedly</p>
               </div>
               <div class="column is-two-thirds">
-                <div id="redeemScript" style="display: none;">
+                <div id="redeemScript">
                   <article class="message is-small">
                     <div class="message-header">
                       <p class="is-relative">Redeem Script</p>
                     </div>
-                    <div id="{{ 'div'+message.aboutListing }}" class="message-body hidden" style="word-wrap: break-word">
+                    <div id="{{ 'div'+message.aboutListing }}" class="message-body" style="word-wrap: break-word">
                     <strong>{{ redeemScripts[message.aboutListing] }}</strong>
                     </div>
                   </article>
                 </div>
               </div>
             </div>
+<!--          @if(listingStatus[message.aboutListing] == "pending" || listingStatus[message.aboutListing] == "funded" || listingStatus[message.aboutListing] == "mempool") -->
           </div>
+<!--          @endif -->
+<!--          @if(listingStatus[message.aboutListing] == "pending" || listingStatus[message.aboutListing] == "funded" || listingStatus[message.aboutListing] == "mempool") -->
           <div class="column is-one-fifth ">
+          @if(listingStatus[message.aboutListing] == "funded" || listingStatus[message.aboutListing] == "mempool")
+            <div class="box">
+            <img src="/img/smile.png" />
+            </div>
+            
+          @elseif(listingStatus[message.aboutListing] == "pending")
             <div class="box">
               <article class="media">
                 <div class="media-content">
@@ -91,13 +133,37 @@
             
             qrcode.makeCode("{{{ 'bitcoin:' + listingAddress[message.aboutListing] + '?amount=' + listingStipend[message.aboutListing] + '&label=Atlanta-Liquidity-Project' }}}")
             </script>
+          @elseif(listingStatus[message.aboutListing] == "channelopen")
+          <div class="notification is-success">
+          <center><p>
+            Channel is open. It will remain open until <p id="{{ 'until-'+message.aboutListing }}"></p>
+            <script>   
+              document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+            </script>
+            </p></center>
           </div>
+          @elseif(listingStatus[message.aboutListing] == "buyerredeemable")
+          <div class="notification is-primary">
+            <center>Redeemable!</center>
+          </div>
+          @else
+          <div class="notification is-danger">
+            <center><p> server error unexpected state: {{ listingStatus[message.aboutListing]}}. </p></center>
+            <p> We have assembled a crack team of misfits to deal with issues like these; please get in contact if this error continues to occur. </p>
+          </div>
+          @endif
+          </div>
+<!--          @endif -->
+          
         </div>
+      
         <span class="is-pulled-right">
           <p>Copy Payment Address  <i class="fas fa-copy" onclick="CopyToClipboard('{{ 'address'+message.aboutListing }}')"></i></p>
         </span>
         <p>{{ message.created_at }} EST</p>
         <br />
+<!--      @if(listingStatus[message.aboutListing] == "pending" || listingStatus[message.aboutListing] == "funded" || listingStatus[message.aboutListing] == "mempool") -->
       </div>
+<!--      @endif -->
     </div>
   </div>
