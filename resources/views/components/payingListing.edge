@@ -7,7 +7,7 @@
           </figure>
         </div>
         <div class="media-content">
-          <p class="title is-4">{{ message.receiverUsername }}</p>
+          <p class="title is-4"><a href={{ '/profile/' + message.receiverUsername }}> {{ message.receiverUsername }} </a></p>
           <p class="subtitle is-6">{{ message.receiverAddress }}</p>
         </div>
       <div class="media-right">
@@ -31,12 +31,16 @@
                   <div class="content">
                   @if(listingStatus[message.aboutListing] == "pending")
                     <p>
-                      <small>Pay</small><strong> {{ calculatedTotalSats[message.aboutListing] }} BTC </strong> <small> to </small> the address below. Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.
+                      <small>Pay</small><strong> {{ calculatedTotalSats[message.aboutListing] }} BTC </strong> <small> to </small> the following address by the time shown below. Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.
                       <br>
-                      <strong id="{{ 'address'+message.aboutListing }}">{{ listingAddress[message.aboutListing] }}</strong>
-
                       
-                      
+                      <center>
+                        <div id="{{ 'fundBy-' + message.aboutListing }}"></div>
+                        <strong id="{{ 'address'+message.aboutListing }}">{{ listingAddress[message.aboutListing] }}</strong>
+                      </center>
+                      <script>
+                      document.getElementById("{{ 'fundBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listingLastChanceToFund[message.aboutListing] }}).format("LLLL")
+                      </script>
                     </p>
                   @elseif(listingStatus[message.aboutListing] == "mempool")
                     <p>
@@ -70,9 +74,9 @@
                       <br>
                       Please click the button below to withdraw your funds to your payment address. ({{ listingBuyerRefundAddress[message.aboutListing] }})
                     </p>
-                    <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
-                    <br>
                     <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
+                    <br>
+                    <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
                   @endif
                   </div>
                 </div>
@@ -125,6 +129,7 @@
               </article>
             </div>
             <progress class="progress is-warning" max="100"></progress>
+            
             <script>
             var qrcode = new QRCode(document.getElementById("{{ 'paymentAddress' + message.id }}"), {
               width : 150,
@@ -138,7 +143,7 @@
           <center><p>
             Channel is open. It will remain open until <p id="{{ 'until-'+message.aboutListing }}"></p>
             <script>   
-              document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+              document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("LLLL")
             </script>
             </p></center>
           </div>

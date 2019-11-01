@@ -7,6 +7,7 @@ var Env = use('Env')
 
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
+const User = use('App/Models/User')
 
 const serverWif = Env.get('SERVER_WIF')
 const HOST = Env.get('BTCD_HOST')
@@ -91,11 +92,8 @@ class BtcWalletController {
       return true
     } catch(e){
       if(e.message.includes('already connected to peer') || e.message.includes('cannot make connection to self')){
-        console.log("connected to live node so returning true")
         return true
       } else {
-        console.log("failed to connect to peer:")
-        console.log(e)
         return false
       }
     }
@@ -168,7 +166,7 @@ class BtcWalletController {
           if(detail['category'] == 'receive'){
             const listing = await Listing.query().where('fundingAddress', detail['address']).first()
             if(listing === null ) { console.log("recieved payment, but not to our address, break"); return }
-            const message = await Message.query().where('aboutListing', listing.id).first()
+            const message = await Message.query().where({'aboutListing': listing.id, 'archived': false}).first()
             if(message === null ) { console.log("recieved payment, but couldn't find buy message. Bad sign!?"); return }
             //console.log(detail)
             var totalpay = new Number(listing.stipend + listing.servicefee).toFixed(8)
@@ -176,6 +174,7 @@ class BtcWalletController {
             if(totalpay <= detail['amount']){
               if(listing.inMempool == false && listing.funded == false){
                 listing.inMempool = true
+                listing.lastChanceToFund = false // for us to filter it out later in Lighting Routine
                 listing.save()
                 message.message = "mempool:"+listing.fundingAddress+":"+listing.redeemScript
                 message.save()
@@ -190,7 +189,7 @@ class BtcWalletController {
                 var totalSats = Math.round(new Number(detail['amount']) * 100000000)
                 var extra = totalSats - Math.round(new Number(listing.stipend) * 100000000) - Math.round(new Number(listing.servicefee) * 100000000 ) 
                 listing.fundingTransactionExtra = extra
-                listing.lastChanceToAccept = ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0)
+                listing.lastChanceToAccept = ((new Date().getTime() + (5*60*1000)) / 1000).toFixed(0)//(24*60*60*1000)) / 1000).toFixed(0)
                 console.log("funded: "+ listing.fundingTransactionAmount)
                 listing.save()
                 message.message = "funded:"+listing.fundingAddress+":"+listing.redeemScript
@@ -215,7 +214,7 @@ class BtcWalletController {
     }
   }
 
-  async refundListing(id, refundAddress, resetListing){
+  async refundListing(id, refundAddress, resetListing, reputation = 0){
     console.log("looking up listing: "+ id)
     var listing = await Listing.find(id)
     if(listing == null ) { return new Error("Invalid listing id specified. Couldn't find listing.")}
@@ -284,9 +283,23 @@ class BtcWalletController {
     }
       
     //await Message.query().where('aboutListing', id).delete()
-    await Message.query().where('aboutListing', id).update({
+    await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
       archived: true
     })
+
+    switch(reputation) {
+      case 0:
+        
+      case 1:
+        await User.query().where({'publicKey': listing.sellerPublicKey}).increment('undisputedTxn', 1)
+        break
+      case -1:
+        await User.query().where({'publicKey': listing.sellerPublicKey}).increment('disputedTxn', 1)
+        break
+      default:
+        break
+    } 
+    
     return psbt.toHex()
   }
 
@@ -312,6 +325,7 @@ class BtcWalletController {
     listing.channelMustBeOpenUntil = null
     listing.lastChanceToOpenChannel = null
     listing.lastChanceToAccept = false
+    listing.lastChanceToFund = false
     listing.consecutiveFailedCheckups = 0
     await listing.save()
   }

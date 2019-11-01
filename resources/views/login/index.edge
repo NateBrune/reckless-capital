@@ -45,7 +45,7 @@
         {{ old('notification') }}
     </div>
   @endif
-      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
     {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('username'), hasErrorFor('username')) }}
     {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('signature'), hasErrorFor('signature')) }}
     {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('publicKey'), hasErrorFor('publicKey')) }}
@@ -66,14 +66,10 @@
       try{
         var mnemonic = document.getElementById("mnemonic").value
         var pubkey = document.getElementById("publicKey").value
-        console.log("current pubkey: " + pubkey)
         var challenge = httpGet("challenge/" + pubkey)
-        console.log("challenge: " + challenge)
         var signature = signWithMnemonic(mnemonic, challenge)
         document.getElementById("signature").value = signature
-        console.log("signature: " + signature)
         var pubkey = document.getElementById("publicKey").value
-        console.log("current pubkey: " + pubkey)
         document.forms["mainForm"].submit()
           //var addr = getAddressFromSeed(seed)
       } catch(e){

@@ -1,0 +1,44 @@
+@layout('master')
+
+@section('content')
+<div class="columns">
+  <div class="column">
+  </div>
+  <div class="column is-one-third">
+    <div class="card">
+      <div class="card-image">
+        <figure class="image">
+          <br>
+          <center><img class="is-rounded" style="max-width:30%; height:auto;" src="{{ profile['picture'] }}" alt="Placeholder image"></center>
+        </figure>
+      </div>
+      <div class="card-content">
+        <div class="media">
+          <div class="media-content">
+            <center><p class="title is-4">{{ profile['username'] }}</p></center>
+            <div class="columns">
+              <div class="column is-half">
+                <div class="is-pulled-right">
+                  <p> {{ profile['disputedTxn'] }} <i class="fas fa-minus-circle"></i></p>
+                </div>
+              </div>
+              <div class="column is-half">
+                  <p><i class="fas fa-plus-circle"></i> {{ profile['undisputedTxn'] }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content" style="overflow-wrap: break-word;">
+          <p>contact: {{ profile['email']}} </p>
+          <p>public key: {{ profile['publicKey'] }}</p>
+          <br>
+          <time datetime="1970-1-1">Last updated: {{ profile['updated_at'] }}</time>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="column">
+  </div>
+</div>
+@endsection

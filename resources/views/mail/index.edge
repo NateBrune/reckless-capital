@@ -43,65 +43,39 @@
         </div>
     </form>
 
-{{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
-{{ elIf('<p class="help is-danger">$self</p>', getErrorFor('toElite'), hasErrorFor('toElite')) }}
-{{ elIf('<p class="help is-danger">$self</p>', getErrorFor('message'), hasErrorFor('message')) }}
-</div>
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('toElite'), hasErrorFor('toElite')) }}
+    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('message'), hasErrorFor('message')) }}
+    </div>
 
-      @each(message in messages)
+    @each(message in messages)
       @if(message.msgType === 0)
-      <div class="box">
-        <article class="media">
-          <div class="media-left">
-            <figure class="image is-64x64 ">
-              <img class="is-rounded" src="{{ message.senderPicture }}" alt="img/profile.png">
-            </figure>
-          </div>
-          <div class="media-content">
-          <span class="is-pulled-right">
-          <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
-            {{ csrfField() }}
-            <button class="delete is-small" type="submit"></button>
-          </form>
-          </span>
-            <div class="content">
-              <p>
-                <strong>{{ message.senderUsername }}</strong> <small>{{ message.senderAddress }}</small> <small>{{ message.created_at }} EST</small>
-                <br>
-                {{ message.message }}
-              </p>
+        <div class="box">
+          <article class="media">
+            <div class="media-left">
+              <figure class="image is-64x64 ">
+                <img class="is-rounded" src="{{ message.senderPicture }}" alt="img/profile.png">
+              </figure>
             </div>
-          </div>
-        </article>
-      </div>
-      <!--
-      <div class="card">
-        <header class="card-header">
-          <p class="card-header-title">
-            From {{ message.senderUsername }}
-          </p>
-          <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
-            {{ csrfField() }}
-            <button type="submit" class="button is-danger is-outlined">
-              <span class="icon is-small">
-                <i class="fa fa-times" aria-hidden="true"></i>
-              </span>
-            </button>
-          </form>
-        </header>
-        <div class="card-content">
-          <div class="content">
-            {{ message.message }}
-            <br>
-          </div>
+            <div class="media-content">
+            <span class="is-pulled-right">
+            <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
+              {{ csrfField() }}
+              <button class="delete is-small" type="submit"></button>
+            </form>
+            </span>
+              <div class="content">
+                <p>
+                  <strong>{{ message.senderUsername }}</strong> <small>{{ message.senderAddress }}</small> <small>{{ message.created_at }} EST</small>
+                  <br>
+                  {{ message.message }}
+                </p>
+              </div>
+            </div>
+          </article>
         </div>
-        <footer class="card-footer">
-        <br>
-        </footer>
-      </div>
-      -->
-    @endif
-      @endeach
+      @endif
+    @endeach
       <!--
       <table class="table is-bordered is-striped is-narrow is-fullwidth">
         <thead>

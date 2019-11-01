@@ -31,6 +31,22 @@ class LoginController {
     return view.render('login.settings')
   }
 
+  async viewProfile({ auth, response, request, view}){
+    const url = request.url()
+    const profile = url.split("/")[2]
+    var elite = await User.query().where('username', profile).fetch()
+    if(!elite){
+      elite = await User.query().where('publicKey', profile).fetch()
+      if(!elite){
+        throw `Couldn't find user (${profile})`
+      }
+    }
+
+    Logger.debug(elite.toJSON()[0])
+    return view.render( 'profile.index', {'profile': elite.toJSON()[0]}  )
+  }
+
+
   async updateprofile ({ auth, session, request, response}) {
     if(request.input('username') != auth.user.username){
       try{
@@ -77,9 +93,36 @@ class LoginController {
     const url = request.url()
     const elitePublicKey = url.split("/")[2]
     if(elitePublicKey.length !== 66){ // length should be 65 for bitcoin public keys but we get 66 chars
-      Logger.debug("bitch tried %s", elitePublicKey)
-      throw Error("Incorrect public key length")
+      throw Error("Incorrect public key length.")
     }
+
+    try{
+      const usernameCount = await User.query().where('username', request.input('username')).count()
+      const usernameTotal = usernameCount[0]['count(*)']
+      if(usernameTotal)
+      {
+        const username = await User.query().where('username', request.input('username')).first()
+        if(username && username.publicKey != elitePublicKey){
+          //throw Error(`Username (${eliteUsername}) doesn't corespond to public key (${elitePublicKey})`)
+          throw Error(`Incorrect username (${eliteUsername}) and password`)
+        }
+      } else { 
+        const pubkeyCount = await User.query().where('publicKey', elitePublicKey).count()
+        const pubkeyTotal = pubkeyCount[0]['count(*)']
+        if(pubkeyTotal)
+          //throw Error(`Username (${eliteUsername}) doesn't corespond to public key (${elitePublicKey})`)
+          throw Error(`Incorrect username (${eliteUsername}) and password`)
+      }
+    } catch (e){
+      if(e.message === 'Undefined binding(s) detected when compiling SELECT query: select count(*) from `users` where `username` = ?'){
+        Logger.crit(`Using initialization bug to get challenge for ${request.input('username')}`)
+      } else {
+        throw Error(`Server Error ${e}`)
+      }
+    }
+
+
+    // end of validation 
     //console.log()
     Logger.debug("challenge for: "+ this.wallet.derriveAddressFromPublicKey(elitePublicKey))
     //const elite = await User.query().where('publicKey', elitePublicKey).first()
@@ -129,14 +172,42 @@ class LoginController {
               .flashAll()
       return response.redirect('back')
     }
+
     const elitePublicKey = request.input('publicKey')
     const eliteSignature = request.input('signature')
+    const eliteUsername = request.input('username')
+
+    const usernameCount = await User.query().where('username', request.input('username')).count()
+    const usernameTotal = usernameCount[0]['count(*)']
+    if(usernameTotal)
+    {
+      const username = await User.query().where('username', eliteUsername).first()
+      if( username && username.publicKey != elitePublicKey){
+          //.withErrors([{ field: 'username', message: `Username (${eliteUsername}) doesn't corespond to public key (${elitePublicKey})` }])
+          session
+          .withErrors([{ field: 'username', message: `Incorrect username (${eliteUsername}) and password` }])
+          .flashAll()
+          return response.redirect('/login')
+        }
+    }  else {  
+      const pubkeyCount = await User.query().where('publicKey', elitePublicKey).count()
+      const pubkeyTotal = pubkeyCount[0]['count(*)']
+      if(pubkeyTotal){
+          session
+          .withErrors([{ field: 'username', message: `Incorrect username (${eliteUsername}) and password` }])
+          .flashAll()
+          return response.redirect('/login')
+      }
+    }
+    // end of validation
 
     const challenge = await Challenge.query().where('publicKey', elitePublicKey).first()
     // just check for the challenge, challenge must be set 
     if(!challenge){
-      session.flash({ notification: `Couldn't find matching challenge for your public key (${elitePublicKey})`})
-      return response.redirect('/')
+      session
+      .withErrors([{ field: 'username', message: `Couldn't find matching challenge for your public key (${elitePublicKey})` }])
+      .flashAll()
+      return response.redirect('/login')
     }
     try{
       var result = bitcoinMessage.verify(challenge.challenge.toString(), this.wallet.derriveAddressFromPublicKey(elitePublicKey), eliteSignature)
@@ -145,11 +216,16 @@ class LoginController {
         if(!elite){
           elite = new User()
           elite.publicKey = elitePublicKey
+          elite.address = this.wallet.derriveAddressFromPublicKey(elitePublicKey)
+          elite.undisputedTxn = 0
+          elite.disputedTxn = 0
+          elite.hasMail = false
+          elite.hasOffer = false
 
-          if(request.input('username')){
-            const taken = await this.usernameTaken(request.input('username'))
+          if(eliteUsername){
+            const taken = await this.usernameTaken(eliteUsername)
             if(!taken){
-              elite.username = request.input('username')
+              elite.username = eliteUsername
             } else {
               session.flash({ notification: `Username taken, sorry.`})
               return response.redirect('/')
@@ -250,8 +326,8 @@ class LoginController {
   async broadcastTx({response, request}){
     const tx = request.input('tx')
     if(!tx){ return }
-    this.wallet.broadcastTx(tx).reject((reason)=>{console.log(`failed to broadcast tx: ${tx}\r\n${reason}`)})
-    return view.redirect('/offers')
+    this.wallet.broadcastTx(tx)
+    return response.redirect('/offers')
   }
 
   generate(n) {

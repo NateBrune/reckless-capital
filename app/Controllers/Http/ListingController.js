@@ -3,6 +3,7 @@
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
 const { validate } = use('Validator')
+const Logger = use('Logger')
 
 const BtcWalletController = use('App/Services/BtcWalletController')
 var Env = use('Env')
@@ -43,16 +44,16 @@ class ListingController {
     var queryListing = null
     switch(sortBy) {
       case "lowest_fee":
-        queryListing = await Listing.query().where('accepted', 0).orderBy('stipend', 'asc').paginate(page, 10)
+        queryListing = await Listing.query().where({'accepted': 0, 'archived': 0}).orderBy('stipend', 'asc').paginate(page, 10)
         break
       case "shortest_term":
-        queryListing = await Listing.query().where('accepted', 0).orderBy('sellerPeriod', 'acs').paginate(page, 10)
+        queryListing = await Listing.query().where({'accepted': 0, 'archived': 0}).orderBy('sellerPeriod', 'acs').paginate(page, 10)
         break
       case "longest_term":
-        queryListing = await Listing.query().where('accepted', 0).orderBy('sellerPeriod', 'desc').paginate(page, 10)
+        queryListing = await Listing.query().where({'accepted': 0, 'archived': 0}).orderBy('sellerPeriod', 'desc').paginate(page, 10)
         break
       case "newest":
-        queryListing = await Listing.query().where('accepted', 0).paginate(page, 10)
+        queryListing = await Listing.query().where({'accepted': 0, 'archived': 0}).paginate(page, 10)
         break
       default:
         return
@@ -132,7 +133,7 @@ class ListingController {
     listing.hasLSAT = new Number(request.input('hasLSAT')).toFixed(8)
     listing.sellerPeriod = new Number(request.input('period')).toFixed(0)
     listing.wantsLSAT = null
-    listing.sellerAddress = elite.address
+    listing.sellerAddress = elite.refundAddress
     listing.sellerPublicKey = elite.publicKey
     listing.username = elite.username
     listing.picture = elite.picture
@@ -145,6 +146,8 @@ class ListingController {
     listing.buyerRedeemable = false
     listing.redeemed = false
     listing.consecutiveFailedCheckups = 0
+    listing.archived = false
+    listing.lastChanceToFund = false
     await listing.save()
     // Fash success message to session
     session.flash({ notification: 'Listing added!' })
@@ -157,7 +160,9 @@ class ListingController {
     
     if(listing.sellerPublicKey == auth.user.publicKey){
       await listing.delete()
-      await Message.query().where('aboutListing', params.id).delete()
+      await Message.query().where({'aboutListing': params.id, 'archived': false}).update({
+        'archived': true
+      })
       // Fash success message to session
       session.flash({ notification: 'Offer deleted!' })
     }
@@ -176,7 +181,7 @@ class ListingController {
     }
     console.log("accepting listing but the last chance is: " + listing.lastChanceToAccept)
     if(auth.user.publicKey === listing.sellerPublicKey && listing.lastChanceToAccept > (new Date().getTime() / 1000).toFixed(0)){
-      await Message.query().where('aboutListing', listing.id).update({
+      await Message.query().where({'aboutListing': params.id, 'archived': false}).update({
         message: "accepted:"+listing.fundingAddress+":"+listing.redeemScript
       })
       listing.accepted = true
@@ -186,6 +191,12 @@ class ListingController {
       session.flash({ notification: 'Accepted!' })
       return response.redirect('back')
     } else {
+        if(listing.lastChanceToAccept > (new Date().getTime() / 1000).toFixed(0)){
+          session
+          .withErrors([{ field: 'notification', message: "Too late to accept listing!" }])
+          .flashAll()
+          return response.redirect('back')
+        }
       session
       .withErrors([{ field: 'notification', message: "Invalid user for this listing." }])
       .flashAll()
@@ -217,26 +228,27 @@ class ListingController {
   async withdrawFrom({response, session, params, auth}){
     const listing = await Listing.find(params.id)
     if(listing == null){
-      console.log(`tried to withdraw invalid listing ${params.id}`)
+      Logger.debug(`tried to withdraw invalid listing ${params.id}`)
       session
       .withErrors([{ field: 'notification', message: 'Invalid offer id.' }])
       .flashAll()
       return response.redirect('/offers')
     }
-    console.log("attempting to withdrawl: " + auth.user.publicKey)
+    Logger.debug("attempting to withdrawl: " + auth.user.publicKey)
     if(listing.sellerRedeemable && auth.user.publicKey == listing.sellerPublicKey){
-      var txData = await this.wallet.refundListing(params.id, listing.sellerAddress, false)
-      console.log("reward sent to: " + listing.sellerAddress)
+      var txData = await this.wallet.refundListing(params.id, listing.sellerAddress, false, 1)
+      Logger.debug("reward sent to: " + listing.sellerAddress)
       session.flash({ notification: 'Reward sent to your address!' })
       return response.redirect('/plsSignTx/'+txData)
     } else if(listing.buyerRedeemable && auth.user.publicKey == listing.buyerPublicKey){
       try{
-        var txData = await this.wallet.refundListing(params.id, listing.buyerAddress, true)
+        var txData = await this.wallet.refundListing(params.id, listing.buyerAddress, false, -1)
         session.flash({ notification: 'Refund sent to your address!' })
-        console.log("refund sent to: " + listing.buyerAddress)
+        Logger.debug("refund sent to: " + listing.buyerAddress)
         return response.redirect('/plsSignTx/'+txData)
       } catch(e){
-        console.log(`withdrawing encountered error on listing: ${params.id}`)
+        Logger.debug(`withdrawing encountered error on listing: ${params.id}`)
+        Logger.debug(e)
         session.flash({ notification: 'A server error occured while attempted to withdraw. Please get in contact.' }) //TODO: get contact email setup
         return response.redirect('/offers')
       }

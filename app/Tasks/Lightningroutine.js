@@ -4,7 +4,7 @@ const Task = use('Task')
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
 const BtcWalletController = use('App/Services/BtcWalletController')
-
+const Logger = use('Logger')
 
 class Lightningroutine extends Task {
 
@@ -22,6 +22,30 @@ class Lightningroutine extends Task {
     if(this.wallet === undefined)
       this.wallet = new BtcWalletController()
   }
+  
+  async markSellerRedeemable(listingId){
+    var listing = await Listing.find(listingId)
+    await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
+      message: "sellerRedeemable:"+listing.fundingAddress+":"+listing.redeemScript
+    })
+    listing.sellerRedeemable = true
+    listing.buyerRedeemable = false
+    listing.consecutiveFailedCheckups = 99
+    listing.save()
+    Logger.info(`Listing ${listingId} marked complete.`)
+  }
+
+  async markBuyerRedeemable(listingId, reason="Reason N/A"){
+    var listing = await Listing.find(listingId)
+    await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
+      message: "buyerRedeemable:"+listing.fundingAddress+":"+listing.redeemScript
+    })
+    listing.sellerRedeemable = false
+    listing.buyerRedeemable = true
+    listing.consecutiveFailedCheckups = 99
+    listing.save()
+    Logger.info(`Refunded listing: ${listingId}, ${reason}`)
+  }
 
   async handle () {
     console.log("Handle!")
@@ -29,7 +53,6 @@ class Lightningroutine extends Task {
     await this.wallet.connectToLnd()
     //await this.sleep(200)
     await this.wallet.unlockLndWallet()
-    console.log("unlocked")
     //await this.sleep(200)
     var queryListing = await Listing.query().where('funded', 1).fetch()
     //console.log(queryListing)
@@ -43,6 +66,10 @@ class Lightningroutine extends Task {
         //console.table(listing)
         continue
       }
+      if(!listing.accepted && listing.lastChanceToAccept < (new Date().getTime() / 1000).toFixed(0)){
+        await this.markBuyerRedeemable(listing.id)
+        continue
+      }
       
       var sellerNodePublicKey = listing['sellerNodePublicKey'].split("@")[0]
       var buyerNodePublicKey = listing['buyerNodePublicKey'].split("@")[0]
@@ -52,6 +79,7 @@ class Lightningroutine extends Task {
         var info = await this.wallet.getNodeInfo(sellerNodePublicKey)
       } catch (e){
         //TODO: delete listing?
+        Logger.debug(`error getNodeInfo in Lightningroutine ${e}`)
         console.log(`skipping bad public key: ${sellerNodePublicKey}`)
         continue
       }
@@ -75,13 +103,13 @@ class Lightningroutine extends Task {
           //console.log(channel)
           continue
         }
-        console.log("comparing " + channel['capacity'] + " and " + new Number(listing['hasLSAT'] * Math.pow(10, 8)))
-        if(channel['capacity'] == new Number(listing['hasLSAT'] * Math.pow(10, 8))){
+        console.log("comparing " + Math.round(channel['capacity']) + " and " + new Number(listing['hasLSAT'] * Math.pow(10, 8)))
+        if(channel['capacity'] == Math.round(new Number(listing['hasLSAT'] * Math.pow(10, 8)))){
           // We've established hat the channel is related to one of our listings
           console.log("Found Channel: " + channel['channel_id'] + ':' + channel['chan_point'] + " for " + channel['capacity'])
           foundChannel = true
           if(listing.channelOpen == false){
-            await Message.query().where('aboutListing', listing.id).update({
+            await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
               message: "channelOpen:"+listing.fundingAddress+":"+listing.redeemScript
             })
             var lsting = await Listing.find(listing.id)
@@ -92,24 +120,16 @@ class Lightningroutine extends Task {
             console.log("First Seen, updated listing and message.")
           }
 
-          if( listing.channelMustBeOpenUntil && listing.channelMustBeOpenUntil < (new Date().getTime() / 1000).toFixed(8) ){
-            await Message.query().where('aboutListing', lsting.id).update({
-              message: "sellerRedeemable:"+lsting.fundingAddress+":"+lsting.redeemScript
-            })
-            lsting.sellerRedeemable = true
-            lsting.buyerRedeemable = false
-            console.log("marking " + lsting.id +" complete :)")
+          if( listing.channelMustBeOpenUntil && listing.channelMustBeOpenUntil < (new Date().getTime() / 1000).toFixed(0) ){
+            await this.markSellerRedeemable(listing.id)
           }
 
 
         } else {
-          console.log("skiping " + channel['capacity'] + " channel")
+          console.log("skipping " + channel['capacity'] + " channel.")
           continue
         }
       }
-      
-      console.log("foundChannel: "+ foundChannel)
-
       if(foundChannel)
         continue
       
@@ -123,7 +143,7 @@ class Lightningroutine extends Task {
       
       lsting.consecutiveFailedCheckups = lsting.consecutiveFailedCheckups + 1
       if(lsting.channelOpen){
-        await Message.query().where('aboutListing', listing.id).update({
+        await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
           message: "channelClosed:"+listing.fundingAddress+":"+listing.redeemScript
         })
       }
@@ -133,20 +153,45 @@ class Lightningroutine extends Task {
         console.log("marking " + lsting.id  + " expired " + lsting.lastChanceToOpenChannel + " < " + ((new Date().getTime() / 1000).toFixed(0)))
         lsting.consecutiveFailedCheckups = 99
       } else {
-        lsting.consecutiveFailedCheckups = 0 // Not expired, so just reset counter.
+        //lsting.consecutiveFailedCheckups = 0 // Not expired, so just reset counter.
       }
 
       console.log("Failing "+ listing.id +" current consecutive failed checkups: " + lsting.consecutiveFailedCheckups)
       //console.table(listing)
       if(lsting.consecutiveFailedCheckups > 2){
-        await Message.query().where('aboutListing', lsting.id).update({
-          message: "buyerRedeemable:"+lsting.fundingAddress+":"+lsting.redeemScript
-        })
-        lsting.sellerRedeemable = false
-        lsting.buyerRedeemable = true
+        await this.markBuyerRedeemable(lsting.id)
       }
       await lsting.save()
     }
+    await this.findExpiredMessages()
+  }
+
+  async asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array);
+    }
+  }
+
+  async findExpiredMessages() {
+    Logger.debug("finding messages dogs")
+    var now = (new Date().getTime() / 1000).toFixed(0)
+    var listings = await Listing.query().whereNot({'lastChanceToFund': false, 'archived': true}).where('lastChanceToFund', '<', now).fetch()
+    await this.asyncForEach(listings.toJSON(), async (listing) => {
+      Logger.debug(`Deleting Message and Listing ${listing.id}`)
+      try{
+        //var messagesthat = await Message.query().where({'aboutListing': listing.id, 'archived': false }).fetch()
+        await Message.query().where({'aboutListing': listing.id, 'archived': false }).update({
+          archived: true
+        })
+        //var lsting = await Listing.find(listing.id)
+        //lsting.lastChanceToFund = false
+        //lsting.pendingAccept = false
+        this.wallet.resetListing(listing.id)
+        lsting.save()
+      } catch (e) {
+        Logger.debug(e)
+      }
+    })
   }
 }
 

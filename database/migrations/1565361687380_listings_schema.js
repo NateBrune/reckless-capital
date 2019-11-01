@@ -24,6 +24,7 @@ class ListingsSchema extends Schema {
       table.string('buyerAddress')
 
       table.boolean('accepted').notNullable()
+      table.string('lastChanceToFund')
       table.string('lastChanceToAccept')
       table.string('lastChanceToOpenChannel')
       table.string('channelMustBeOpenUntil')
@@ -44,6 +45,7 @@ class ListingsSchema extends Schema {
       table.string('output')
       table.string('redeemScript')
       table.string('fundingAddress')
+      table.boolean('archived').notNullable()
       
       table.timestamps()
     })

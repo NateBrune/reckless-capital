@@ -84,13 +84,14 @@
         {{ old('notification') }}
     </div>
   @endif
+  {{ elIf('<div class="notification is-warning">$self</div>', getErrorFor('notification'), hasErrorFor('notification')) }}
   @each(message in messages)
-  @if(message.msgType != 0)
-    @if(message.receiverAddress == auth.user.address)
-      @!component('components.pendingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, lnAddress = lnAddress, listingOpenBy = listingOpenBy, listingSellerRefundAddress = listingSellerRefundAddress, csrfField = csrfField)
-    @else
-      @!component('components.payingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, listingBuyerRefundAddress = listingBuyerRefundAddress, listingOpenBy = listingOpenBy, calculatedTotalSats = calculatedTotalSats, csrfField = csrfField, QRCode = QRCode)
+    @if(message.msgType != 0)
+      @if(message.receiverAddress == auth.user.address)
+        @!component('components.pendingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, lnAddress = lnAddress, listingOpenBy = listingOpenBy, listingSellerRefundAddress = listingSellerRefundAddress, listingAcceptBy = listingAcceptBy, csrfField = csrfField)
+      @else
+        @!component('components.payingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, listingBuyerRefundAddress = listingBuyerRefundAddress, listingOpenBy = listingOpenBy, calculatedTotalSats = calculatedTotalSats, listingLastChanceToFund = listingLastChanceToFund, csrfField = csrfField, QRCode = QRCode)
+      @endif
     @endif
-  @endif
   @endeach
 @endsection

@@ -4,6 +4,7 @@ const Message = use('App/Models/Message')
 const Elites = use('App/Models/User')
 const Listing = use('App/Models/Listing')
 const User = use('App/Models/User')
+const Logger = use('Logger')
 
 const BtcWalletController = use('App/Services/BtcWalletController')
 
@@ -46,21 +47,17 @@ class MailController {
   }
 
   async offers ({ view, auth, response, session }) {
-    await User.query().where('publicKey', auth.user.publicKey).update({
-      hasOffer: false
-    })
 
-    
-    var queryMsg = await Message.query().where('receiverUsername', auth.user.username).where('archived', false).fetch()
+    var elite = await auth.getUser()
+    elite.hasOffer = false
+    await elite.save()
+
+    var queryMsg = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).fetch()
     var messages = []
     queryMsg.toJSON().forEach((message)=>messages.push(message))
-    queryMsg = await Message.query().where('senderUsername', auth.user.username).where('archived', false).fetch()
-    //console.log(queryMsg.toJSON())
+    queryMsg = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).fetch()
+    console.log(queryMsg.toJSON())
     queryMsg.toJSON().forEach((message)=>messages.push(message))
-    //var elite = await auth.getUser()
-    //elite.hasOffer = false
-    //elite.save()
-    console.log(`setting ${auth.user.publicKey} to false`)
 
     var redeemScripts = {}
     var listingAddress = {}
@@ -73,7 +70,9 @@ class MailController {
     var listingBuyerRefundAddress = {}
     var listingSellerRefundAddress = {}
     var listingOpenBy = {}
+    var listingAcceptBy = {}
     var calculatedTotalSats = {}
+    var listingLastChanceToFund = {}
     await this.asyncForEach (messages, async (message) => {
       if(message.msgType == MSG_BUY_REQUEST){
         // TODO: clean this up await Listing.query().where('id', message.aboutListing).fetch().then((result)=>result.toJSON()) 
@@ -90,21 +89,19 @@ class MailController {
           listingBuyerRefundAddress[message.aboutListing] = listing.buyerAddress
           listingSellerRefundAddress[message.aboutListing] = listing.sellerAddress
           listingOpenBy[message.aboutListing] = listing.lastChanceToOpenChannel
+          listingAcceptBy[message.aboutListing] = listing.lastChanceToAccept
+          listingLastChanceToFund[message.aboutListing] = listing.lastChanceToFund
           calculatedTotalSats[message.aboutListing] = new Number((Math.round(listing.stipend*100000000)+Math.round(listing.servicefee*100000000)) / 100000000).toFixed(8)
         } else {
           console.log("message " + message.id + " found to have unknown aboutListing: " + message.aboutListing)
           //await Message.query().where('aboutListing', message.aboutListing).delete()
-          await Message.query().where('aboutListing', message.aboutListing).update({
+          await Message.query().where({'aboutListing': message.aboutListing, 'archived': false}).update({
             archived: true
           })
         }
       }
-      console.log(listingStipend)
-      console.log(listingServiceFee)
-      console.log(calculatedTotalSats)
     })
-    console.log(listingStatus)
-    return view.render('mail.offers', { messages: messages, redeemScripts: redeemScripts, listingAddress: listingAddress, listingStatus: listingStatus, listingLiquidity: listingLiquidity, listingStipend: listingStipend, listingServiceFee: listingServiceFee, listingOpenUntil: listingOpenUntil, lnAddress: lnAddress, listingBuyerRefundAddress: listingBuyerRefundAddress, listingOpenBy: listingOpenBy, listingSellerRefundAddress: listingSellerRefundAddress, calculatedTotalSats: calculatedTotalSats })
+    return view.render('mail.offers', { messages: messages, redeemScripts: redeemScripts, listingAddress: listingAddress, listingStatus: listingStatus, listingLiquidity: listingLiquidity, listingStipend: listingStipend, listingServiceFee: listingServiceFee, listingOpenUntil: listingOpenUntil, lnAddress: lnAddress, listingBuyerRefundAddress: listingBuyerRefundAddress, listingOpenBy: listingOpenBy, listingSellerRefundAddress: listingSellerRefundAddress, listingAcceptBy: listingAcceptBy, calculatedTotalSats: calculatedTotalSats, listingLastChanceToFund: listingLastChanceToFund })
   }
 
   async destroy ({ params, session, response, auth }) {
@@ -115,29 +112,24 @@ class MailController {
     }
     if((message.receiverAddress == auth.user.address)||(message.senderAddress == auth.user.address)){
       const listing = await Listing.find(message.aboutListing)
-      await message.delete()
       // Put listing back on the map
       if(listing != null){
         if(listing.consecutiveFailedCheckups == 99){
-          var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, false)
-        } else if(listing.redeemed){
-          session.flash({ notification: 'Message deleted!' })
-          return response.redirect('back')
+          var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, false, -1)
+        } else if(listing.funded == false){
+          await this.wallet.resetListing(message.aboutListing)
         } else {
-          var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, true)
+          //var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, true)
+          session
+          .withErrors([{ field: 'notification', message: 'Cannot cancel contract during liquidity lease.' }])
+          .flashAll()
+          return response.redirect('/offers')
         }
-        
-        session.flash({ notification: 'Message deleted!' })
-        return response.redirect('/plsSignTx/'+txData)
-        /*
-        listing.pendingAccept = false
-        listing.inMempool = false
-        listing.funded = false
-        await listing.save()
-        */
       }
-      session.flash({ notification: 'Message deleted!' })
     }
+    session.flash({ notification: 'Message deleted!' })
+    message.archived = true
+    await message.save()
     return response.redirect('back')
   }
 
@@ -239,9 +231,6 @@ class MailController {
           return response.redirect('back')
         }
         
-
-        /* unused */ 
-        
         await this.wallet.connectToLnd()
         await this.wallet.unlockLndWallet()
         var connected = await this.wallet.connectPeerLND(request.input('buyerNodePublicKey'))
@@ -255,11 +244,13 @@ class MailController {
         referenceListing.buyerNodePublicKey = request.input('buyerNodePublicKey')
         referenceListing.buyerPublicKey = elite.publicKey
         referenceListing.sellerPublicKey = toElite.publicKey
-
+        referenceListing.lastChanceToFund = new Number((new Date().getTime() + 3*60*1000) / 1000).toFixed(0)
+        Logger.info(`last chance to fund ${referenceListing.lastChanceToFund}`)
         try{
           await referenceListing.save()
           msg.aboutListing = referenceListing.id
-        } catch {
+        } catch(e) {
+          Logger.debug(e)
           session
           .withErrors([{ field: 'notification', message: 'Failed to mark listing as pending accept.' }])
           .flashAll()
@@ -290,7 +281,8 @@ class MailController {
 
     try {
     await msg.save()
-    } catch {
+    } catch (e){
+      Logger.debug(e)
       session
       .withErrors([{ field: 'notification', message: 'Message type-('+msgType+'): Failed to send message.' }])
       .flashAll()

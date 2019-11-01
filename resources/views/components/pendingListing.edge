@@ -25,6 +25,8 @@
                 Please click the button below to withdraw your funds to your payment address. ({{ listingSellerRefundAddress[message.aboutListing] }})
             </p>
             <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
+            <br>
+            <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
             @else
             <article class="message is-small">
               <div class="message-header">
@@ -50,7 +52,7 @@
             <div class="notification is-success">
               <center>Channel is open, wait until <p id="{{ 'until-'+message.aboutListing }}"></p> to close the channel </center>
               <script>   
-                document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+                document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("LLLL")
               </script>
             </div>
             @elseif(listingStatus[message.aboutListing] == "channelclosed")
@@ -61,9 +63,13 @@
             <div class="notification is-danger">
               <center>Offer closed. Reward lost.</center>
             </div>
-            <p> Channel was closed before {{ listingOpenUntil[message.aboutListing] }} <p id="{{ 'until2-'+message.aboutListing }}"/></p>
+            <p>Possible reasons:</p>
+            <ul>
+              <li>Channel closed early</li>
+              <li>Listing was not accepted in time</li>
+            </ul>
             <script>   
-                document.getElementById("{{ 'until2-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+                document.getElementById("{{ 'until2-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("LLLL")
             </script>
             @elseif(listingStatus[message.aboutListing] == "sellerredeemable")
             <div class="notification is-light">
@@ -76,7 +82,13 @@
                 <center>Accepted. Please open a channel to the Lightning Address by the time listed below.</center>
                 <center><p id="{{ 'openBy-'+message.aboutListing }}"/></p></center>
                 <script>   
-                    document.getElementById("{{ 'openBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenBy[message.aboutListing] }}).format("MM/DD/YYYY H:m")
+                    document.getElementById("{{ 'openBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenBy[message.aboutListing] }}).format("LLLL")
+                </script>
+              @elseif(listingStatus[message.aboutListing] == "funded")
+                <center>Payment is funded. Please accept or decline by the time below.</center>
+                <center><p id="{{ 'acceptBy-'+message.aboutListing }}"/></p></center>
+                <script>   
+                    document.getElementById("{{ 'acceptBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listingAcceptBy[message.aboutListing] }}).format("LLLL")
                 </script>
               @else 
                 <center>Payment is {{ listingStatus[message.aboutListing] }}.</center>

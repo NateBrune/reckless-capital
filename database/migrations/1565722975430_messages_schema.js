@@ -7,7 +7,7 @@ class MessagesSchema extends Schema {
   up () {
     this.create('messages', (table) => {
       table.increments()
-      table.integer('aboutListing', 64).unique()
+      table.integer('aboutListing', 64)
       table.string('senderUsername', 64)
       table.string('senderAddress', 64).notNullable()
       table.string('senderPicture', 128)
