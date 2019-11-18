@@ -32,47 +32,60 @@
           <span class="icon is-small is-left">
             <i class="fas fa-user-circle"></i>
           </span>
-          <span class="icon is-small is-right">
-            <i class="fas fa-check"></i>
-          </span>
         </div>
       </div>
       <div class="field">
         <label class="label">Profile Picture</label>
         <div class="control has-icons-left has-icons-right">
-          <input class="input is-success" type="text" name="picture" value="{{ auth.user.picture }}" placeholder="http://example.com/profile.png">
+          @if(auth.user.picture)
+            <input class="input is-success" type="text" name="picture" value="{{ auth.user.picture }}">
+          @else 
+          <input class="input is-success" type="text" name="picture" placeholder="http://example.com/profile.png">
+          @endif
           <span class="icon is-small is-left">
-            <i class="fas fa-link"></i>
-          </span>
-          <span class="icon is-small is-right">
-            <i class="fas fa-check"></i>
+              <i class="far fa-image"></i>
           </span>
         </div>
       </div>
       <div class="field">
         <label class="label">Payment Address</label>
         <div class="control has-icons-left has-icons-right">
-          <input class="input is-success" type="text" name="refundAddress" value="{{ auth.user.refundAddress }}" placeholder="A Bitcoin address you're in control of">
-          <span class="icon is-small is-left">
-            <i class="fas fa-link"></i>
-          </span>
-          <span class="icon is-small is-right">
-            <i class="fas fa-check"></i>
+          @if(auth.user.refundAddress)
+            <input class="input is-success" type="text" name="refundAddress" value="{{ auth.user.refundAddress }}">
+          @else 
+          <input class="input is-success" type="text" name="refundAddress" placeholder="A Bitcoin address you're in control of">
+          @endif
+            <span class="icon is-small is-left">
+                <i class="fab fa-bitcoin"></i>
           </span>
         </div>
       </div>
       <div class="field">
-        <label class="label">Email Address</label>
+        <label class="label">Contact</label>
         <div class="control has-icons-left has-icons-right">
-          <input class="input is-success" type="text" name="email" value="{{ auth.user.email }}" placeholder="Optional email address">
+          @if(auth.user.email)
+            <input class="input is-success" type="text" name="email" value="{{ auth.user.email }}">
+          @else 
+            <input class="input is-success" type="text" name="email" placeholder="Point of contact (email, phone number, etc...)">
+          @endif
           <span class="icon is-small is-left">
-            <i class="fas fa-link"></i>
-          </span>
-          <span class="icon is-small is-right">
-            <i class="fas fa-check"></i>
+              <i class="far fa-envelope"></i>
           </span>
         </div>
       </div>
+      <div class="field">
+          <label class="label">About You</label>
+          <div class="control has-icons-left has-icons-right">
+            @if(auth.user.bio)
+              <textarea class="textarea" type="text" name="bio" maxlength="512">{{ auth.user.bio }}</textarea>
+            @else
+              <textarea class="textarea" type="text" name="bio" placeholder="A message for people who visit your profile"></textarea>
+            @endif
+            <span class="icon is-small is-right">
+              <i class="fas fa-check"></i>
+            </span>
+          </div>
+        </div>
       <div class="control">
         <button type="submit" class="button is-right is-primary">Submit</button>
       </div>

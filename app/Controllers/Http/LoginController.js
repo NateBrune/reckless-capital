@@ -65,8 +65,8 @@ class LoginController {
     elite.picture = request.input('picture')
     elite.refundAddress = request.input('refundAddress')
     elite.email = request.input('email')
+    elite.bio = request.input('bio')
     elite.save()
-    console.log(request.input('picture'))
     session.flash({ notification: 'Profile settings saved.'})
     
     await Listing.query().where('sellerPublicKey', elite.publicKey).update({

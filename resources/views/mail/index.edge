@@ -1,22 +1,107 @@
 @layout('master')
 
 @section('content')
+<script>
+function updateURLParameter(url, param, paramVal){
+  var TheAnchor = null;
+  var newAdditionalURL = "";
+  var tempArray = url.split("?");
+  var baseURL = tempArray[0];
+  var additionalURL = tempArray[1];
+  var temp = "";
+
+  if (additionalURL) 
+  {
+    var tmpAnchor = additionalURL.split("#");
+    var TheParams = tmpAnchor[0];
+    TheAnchor = tmpAnchor[1];
+    if(TheAnchor)
+      additionalURL = TheParams;
+
+    tempArray = additionalURL.split("&");
+
+    for (var i=0; i<tempArray.length; i++)
+    {
+      if(tempArray[i].split('=')[0] != param)
+      {
+        newAdditionalURL += temp + tempArray[i];
+        temp = "&";
+      }
+    }        
+  }
+  else
+  {
+    var tmpAnchor = baseURL.split("#");
+    var TheParams = tmpAnchor[0];
+    TheAnchor  = tmpAnchor[1];
+
+    if(TheParams)
+      baseURL = TheParams;
+  }
+
+  if(TheAnchor)
+    paramVal += "#" + TheAnchor;
+
+  var rows_txt = temp + "" + param + "=" + paramVal;
+  return baseURL + "?" + newAdditionalURL + rows_txt;
+}
+
+function loadPage(page){
+  var url = updateURLParameter(window.location.href, 'page', page)
+  document.location.href = url
+}
+
+function nextPage(page){
+  var url = updateURLParameter(window.location.href, 'page', page+1)
+  document.location.href = url
+}
+function lastPage(page){
+  var url = updateURLParameter(window.location.href, 'page', page-1)
+  document.location.href = url
+}
+</script>
 <div class="card">
   <div class="card-content">
-    <section class="hero">
-      <div class="hero-body">
-        <div class="container">
-          <h1 class="title">
-            Message Inbox
-          </h1>
-          <h2 class="subtitle">
-            Messages from users of the website 
-          </h2>
-        </div>
+    <div class="columns">
+      <div class="column is-three-quarters">
+        <section class="hero">
+          <div class="hero-body">
+            <div class="container">
+              <h1 class="title">
+                Message Inbox
+              </h1>
+              <h2 class="subtitle">
+                Messages from users of the website 
+              </h2>
+            </div>
+          </div>
+        </section>
       </div>
-    </section>
-  </div>
-</div>
+      <div class="column is-one-quarter">
+        <form id="sortForm">
+          <div class="field is-grouped">
+            <div class="control">
+              <label class="label"> Filter </label>
+              <div class="select">
+                <select name="sortBy" id="sortBy" value="{{ old('sortBy', '') }}">
+                  <option>Received</option>
+                  <option>Sent</option>
+                  <option value="ArchivedReceived">Archived Received</option>
+                  <option value="ArchivedSent">Archived Sent</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <p class="control">
+              <button class="button is-link">Search</button>
+            </p>
+          </div>
+        </form>
+      </div> <!-- column -->
+    </div> <!-- columns -->
+  </div> <!-- card content -->
+</div> <!-- card -->
 
 <div class="box">
   <form action="sendMsg" method="POST">
@@ -25,7 +110,7 @@
         <!–– To Field ––>
         <label class="label"> Username of the person you with to send your message to.</label>
         <div class="control has-icons-left is-expanded">
-          <input class="input" type="text" name="toElite" value="{{ old('toElite', '') }}" placeholder="natebrune">
+          <input class="input" type="text" name="toElite" value="{{ old('toElite', '') }}" placeholder="username">
           <span class="icon is-small is-left">
             <i class="fas fa-key"></i>
           </span>
@@ -48,7 +133,7 @@
     {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('message'), hasErrorFor('message')) }}
     </div>
 
-    @each(message in messages)
+    @each(message in messages.data)
       @if(message.msgType === 0)
         <div class="box">
           <article class="media">
@@ -66,7 +151,7 @@
             </span>
               <div class="content">
                 <p>
-                  <strong>{{ message.senderUsername }}</strong> <small>{{ message.senderAddress }}</small> <small>{{ message.created_at }} EST</small>
+                  <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + message.senderUsername }}><strong>{{ message.senderUsername }}</strong></a> <small>{{ message.created_at }} EST</small>
                   <br>
                   {{ message.message }}
                 </p>
@@ -107,4 +192,24 @@
         {{ old('notification') }}
     </div>
   @endif
+  <div class="box">
+    <nav class="pagination" role="navigation" aria-label="pagination">
+      <a class="pagination-previous" title="First Page" {{ messages.page == 1 ? 'href=#' : 'onclick=lastPage(' + messages.page + ')' }} >Previous</a>
+      <a class="pagination-next" {{ messages.lastPage == messages.page ? 'href=#' : 'onclick=nextPage(' + messages.page + ')' }} >Next page</a>
+      <ul class="pagination-list">
+        <!--href="?page={{ page }}"-->
+        @each(page in range(1, messages.lastPage+1))
+        @if(messages.page === page)
+        <li>
+          <a class="pagination-link is-current" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{'Page ' + page}}" aria-current="page">{{ page }}</a>
+        </li>
+        @else
+        <li>
+            <a class="pagination-link" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{ 'Goto page ' + page }}">{{ page }}</a>
+          </li>
+        @endif
+        @endeach
+      </ul>
+    </nav>
+  </div>
 @endsection

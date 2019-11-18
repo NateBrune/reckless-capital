@@ -176,7 +176,7 @@ class BtcWalletController {
                 listing.inMempool = true
                 listing.lastChanceToFund = false // for us to filter it out later in Lighting Routine
                 listing.save()
-                message.message = "mempool:"+listing.fundingAddress+":"+listing.redeemScript
+                message.message = "mempool"
                 message.save()
                 console.log("payment found in mempool!")
                 return
@@ -192,7 +192,7 @@ class BtcWalletController {
                 listing.lastChanceToAccept = ((new Date().getTime() + (5*60*1000)) / 1000).toFixed(0)//(24*60*60*1000)) / 1000).toFixed(0)
                 console.log("funded: "+ listing.fundingTransactionAmount)
                 listing.save()
-                message.message = "funded:"+listing.fundingAddress+":"+listing.redeemScript
+                message.message = "funded"
                 message.save()
                 return
               } else {
@@ -292,9 +292,11 @@ class BtcWalletController {
         
       case 1:
         await User.query().where({'publicKey': listing.sellerPublicKey}).increment('undisputedTxn', 1)
+        await User.query().where({'publicKey': listing.buyerPublicKey}).increment('undisputedTxn', 1)
         break
       case -1:
         await User.query().where({'publicKey': listing.sellerPublicKey}).increment('disputedTxn', 1)
+        await User.query().where({'publicKey': listing.buyerPublicKey}).increment('disputedTxn', 1)
         break
       default:
         break

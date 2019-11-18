@@ -223,11 +223,16 @@
             </div>
             <div class="content">
               <p>
-                <strong>{{ listing.username }}</strong> <small> is selling </small> <strong>{{ listing.hasLSAT }} lBTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
+                <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a> <small> is selling </small> <strong>{{ listing.hasLSAT }} lBTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
                 <br>
                 Fee is <strong> {{ listing.stipend + listing.servicefee }} BTC</strong>
                 <br>
-                {{ listing.sellerNodePublicKey }} 
+              <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
+              <script>
+                var selpubkey = "{{ listing.sellerNodePublicKey }}"
+                var link = document.getElementById("{{ 'href-' + listing.id }}")
+                link.setAttribute("href", 'https://1ml.com/node/' + selpubkey.split('@')[0])
+              </script>
               </p>
             </div>
           </div>

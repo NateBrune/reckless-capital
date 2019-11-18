@@ -7,8 +7,7 @@
           </figure>
         </div>
         <div class="media-content">
-          <p class="title is-4">{{ message.senderUsername }}</p>
-          <p class="subtitle is-6">{{ message.senderAddress }}</p>
+          <a class="title is-6 button is-rounded is-outlined is-small is-link" href="{{ '/profile/' + message.senderUsername}}">{{ message.senderUsername }}</a>
         </div>
       <div class="media-right">
         <form action="{{ 'deleteMsg/' + message.id + '?_method=DELETE' }}" method="POST">
@@ -20,9 +19,9 @@
       <div class="content">
         <div class="columns">
           <div class="column is-four-fifths">
-            @if(listingStatus[message.aboutListing] == "sellerredeemable")
+            @if(message.message == "sellerRedeemable")
             <p>
-                Please click the button below to withdraw your funds to your payment address. ({{ listingSellerRefundAddress[message.aboutListing] }})
+                Please click the button below to withdraw your funds to your payment address. ({{ listings[message.aboutListing].sellerAddress }})
             </p>
             <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
             <br>
@@ -33,7 +32,7 @@
                 <p class="is-relative">Redeem Script</p>
               </div>
               <!-- On one line to remove newline while copying div -->
-              <div id="{{ 'redeemScriptdiv-'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ redeemScripts[message.aboutListing] }}</strong></div>
+              <div id="{{ 'redeemScriptdiv-'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ listings[message.aboutListing]['redeemScript'] }}</strong></div>
             </article>
             <article class="message is-small">
               <div class="message-header">
@@ -41,25 +40,25 @@
               </div>
               <!-- On one line to remove newline while copying div -->
               <div id="{{ 'lnmsgdiv-'+message.aboutListing }}" class="message-body" style="word-wrap: break-word">
-                Please open a channel with {{ listingLiquidity[message.aboutListing] }} lBTC capacity to 
-              <div id="{{ 'lnaddressdiv-'+message.aboutListing }}" ><strong>{{ lnAddress[message.aboutListing] }}</strong></div>
+                Please open a channel with {{ listings[message.aboutListing].hasLSAT }} lBTC capacity to 
+              <div id="{{ 'lnaddressdiv-'+message.aboutListing }}" ><strong>{{ listings[message.aboutListing].buyerNodePublicKey }}</strong></div>
               </div>
             </article>
             @endif
           </div>
           <div class="column is-one-fifth ">
-            @if(listingStatus[message.aboutListing] == "channelopen")
+            @if(message.message == "channelOpen")
             <div class="notification is-success">
               <center>Channel is open, wait until <p id="{{ 'until-'+message.aboutListing }}"></p> to close the channel </center>
               <script>   
-                document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("LLLL")
+                document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listings[message.aboutListing].channelMustBeOpenUntil }}).format("LLLL")
               </script>
             </div>
-            @elseif(listingStatus[message.aboutListing] == "channelclosed")
+            @elseif(message.message == "channelClosed")
             <div class="notification is-warning">
               <center>Channel prematurely closed please reopen immediately to avoid loosing reward.</center>
             </div>
-            @elseif(listingStatus[message.aboutListing] == "buyerredeemable")
+            @elseif(message.message == "buyerRedeemable")
             <div class="notification is-danger">
               <center>Offer closed. Reward lost.</center>
             </div>
@@ -68,34 +67,36 @@
               <li>Channel closed early</li>
               <li>Listing was not accepted in time</li>
             </ul>
-            <script>   
-                document.getElementById("{{ 'until2-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenUntil[message.aboutListing] }}).format("LLLL")
-            </script>
-            @elseif(listingStatus[message.aboutListing] == "sellerredeemable")
+            <!--
+              <script>   
+                  document.getElementById("{{ 'until2-'+message.aboutListing }}").innerHTML = moment.unix({{ listings[message.aboutListing].lastChanceToAccept }}).format("LLLL")
+              </script>
+            -->
+            @elseif(message.message == "sellerRedeemable")
             <div class="notification is-light">
               <center>Complete!</center>
             </div>
-            <p> You have {{ listingStipend[message.aboutListing] }} BTC waiting to be redeemed.</p>
+            <p> You have {{ listings[message.aboutListing].stipend }} BTC waiting to be redeemed.</p>
             @else
             <div class="notification is-warning">
-              @if(listingStatus[message.aboutListing] == "accepted")
+              @if(message.message == "accepted")
                 <center>Accepted. Please open a channel to the Lightning Address by the time listed below.</center>
                 <center><p id="{{ 'openBy-'+message.aboutListing }}"/></p></center>
                 <script>   
-                    document.getElementById("{{ 'openBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listingOpenBy[message.aboutListing] }}).format("LLLL")
+                    document.getElementById("{{ 'openBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listings[message.aboutListing].lastChanceToOpenChannel }}).format("LLLL")
                 </script>
-              @elseif(listingStatus[message.aboutListing] == "funded")
+              @elseif(message.message == "funded")
                 <center>Payment is funded. Please accept or decline by the time below.</center>
                 <center><p id="{{ 'acceptBy-'+message.aboutListing }}"/></p></center>
                 <script>   
-                    document.getElementById("{{ 'acceptBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listingAcceptBy[message.aboutListing] }}).format("LLLL")
+                    document.getElementById("{{ 'acceptBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listings[message.aboutListing].lastChanceToAccept }}).format("LLLL")
                 </script>
               @else 
-                <center>Payment is {{ listingStatus[message.aboutListing] }}.</center>
+                <center>Payment is {{ message.message }}.</center>
               @endif
             </div>
             @endif
-            @if(listingStatus[message.aboutListing] == "funded" || listingStatus[message.aboutListing] == "mempool" || listingStatus[message.aboutListing] == "accepted")
+            @if(message.message == "funded" || message.message == "mempool" || message.message == "accepted")
               <progress class="progress is-warning" max="100"></progress>
             @endif
             
@@ -104,9 +105,11 @@
         <span class="is-pulled-right">
           <p>Copy Lightning Address <i class="fas fa-copy" onclick="CopyToClipboard('{{ 'lnaddressdiv-'+message.aboutListing }}')"></i></p>
         </span>
-        <p>{{ message.created_at }} EST</p>
-        <br />
-        @if(listingStatus[message.aboutListing] == "funded")
+        <p id="{{ 'created-at-' + message.aboutListing }}"></p>
+        <script>
+          document.getElementById("{{ 'created-at-' + message.aboutListing }}").innerHTML = "Created at: " + moment("{{ listings[message.aboutListing].created_at }}").format("LLLL")
+        </script>
+        @if(message.message == "funded")
           <div class="columns">
             <div class="column">
               <a href="{{ '/acceptListing/' + message.aboutListing }}" class="button is-small is-fullwidth is-success">Accept</a>

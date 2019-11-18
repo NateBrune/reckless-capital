@@ -182,7 +182,7 @@ class ListingController {
     console.log("accepting listing but the last chance is: " + listing.lastChanceToAccept)
     if(auth.user.publicKey === listing.sellerPublicKey && listing.lastChanceToAccept > (new Date().getTime() / 1000).toFixed(0)){
       await Message.query().where({'aboutListing': params.id, 'archived': false}).update({
-        message: "accepted:"+listing.fundingAddress+":"+listing.redeemScript
+        message: "accepted"
       })
       listing.accepted = true
       listing.lastChanceToOpenChannel = ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0)

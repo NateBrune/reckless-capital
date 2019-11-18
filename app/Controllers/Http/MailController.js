@@ -20,8 +20,7 @@ class MailController {
     this.wallet = new BtcWalletController()
   }
 
-  async index ({ view, auth, response, session }) {
-    const messages = await Message.query().where('receiverUsername', auth.user.username).fetch()
+  async index ({ view, auth, response, session, request }) {
     //var messages = []
     //queryMsg['rows'].forEach((message)=>messages.push(message))
     var elite = null
@@ -36,8 +35,43 @@ class MailController {
     }
     elite.hasMail = false
     elite.save()
-    const listings = await Listing.all()
-    return view.render('mail.index', { messages: messages.toJSON(), listings: listings.toJSON() })
+
+    var all = request.all()
+    //console.log(all)
+    var sortBy = all['sortBy']
+    var page = all['page']
+    if(page === undefined){
+      page = 1
+    }
+    //var min = all['min']
+    //var max = all['max']
+    if(sortBy === undefined){ //|| min === undefined || max === undefined){
+      sortBy = "Received"
+    }
+
+    var messages = []
+
+    if(sortBy === "Sent"){
+      var query  = await Message.query().where({'senderUsername': auth.user.username, archived: false}).orderBy('created_at', 'desc').paginate(page, 10)
+      messages = query.toJSON()
+    }
+
+    if( sortBy === "Received"){
+      var query = await Message.query().where({'receiverUsername': auth.user.username, archived: false}).orderBy('created_at', 'desc').paginate(page, 10)
+      messages = query.toJSON()
+    }
+
+    if(sortBy === "ArchivedSent"){
+      var query  = await Message.query().where({'senderUsername': auth.user.username, archived: true}).orderBy('created_at', 'desc').paginate(page, 10)
+      messages = query.toJSON()
+    }
+
+    if( sortBy === "ArchivedReceived"){
+      var query = await Message.query().where({'receiverUsername': auth.user.username, archived: true}).orderBy('created_at', 'desc').paginate(page, 10)
+      messages = query.toJSON()
+    }
+
+    return view.render('mail.index', { messages: messages })
   }
 
   async asyncForEach(array, callback) {
@@ -46,18 +80,25 @@ class MailController {
     }
   }
 
-  async offers ({ view, auth, response, session }) {
+  async offers ({ view, auth, response, request, session }) {
 
     var elite = await auth.getUser()
     elite.hasOffer = false
     await elite.save()
 
-    var queryMsg = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).fetch()
+    var all = request.all()
+    var page = all['page']
+    if(page === undefined){
+      page = 1
+    }
+    /*
+    var queryMsg = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).paginate(page, 10)
     var messages = []
-    queryMsg.toJSON().forEach((message)=>messages.push(message))
-    queryMsg = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).fetch()
-    console.log(queryMsg.toJSON())
-    queryMsg.toJSON().forEach((message)=>messages.push(message))
+    var json = queryMsg.toJSON()
+    json['data'].forEach((message)=>messages.push(message))
+    queryMsg = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).paginate(page, 10)
+    json = queryMsg.toJSON()
+    json['data'].forEach((message)=>messages.push(message))
 
     var redeemScripts = {}
     var listingAddress = {}
@@ -101,7 +142,41 @@ class MailController {
         }
       }
     })
+
     return view.render('mail.offers', { messages: messages, redeemScripts: redeemScripts, listingAddress: listingAddress, listingStatus: listingStatus, listingLiquidity: listingLiquidity, listingStipend: listingStipend, listingServiceFee: listingServiceFee, listingOpenUntil: listingOpenUntil, lnAddress: lnAddress, listingBuyerRefundAddress: listingBuyerRefundAddress, listingOpenBy: listingOpenBy, listingSellerRefundAddress: listingSellerRefundAddress, listingAcceptBy: listingAcceptBy, calculatedTotalSats: calculatedTotalSats, listingLastChanceToFund: listingLastChanceToFund })
+    */
+    var sellingMsg = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
+    var buyingMsg = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
+    var listings = {}
+    
+    await this.asyncForEach (buyingMsg.rows, async (message) => {
+      var result = await Listing.query().where('id', message.aboutListing).first()
+
+      if(result === null){
+        await Message.query().where({'aboutListing': message.aboutListing, 'archived': false}).update({
+          archived: true
+        })
+      }
+
+      listings[message.aboutListing] = result.toJSON()
+    })
+
+    await this.asyncForEach (sellingMsg.rows, async (message) => {
+      var result = await Listing.query().where('id', message.aboutListing).first()
+
+      if(result === null){
+        await Message.query().where({'aboutListing': message.aboutListing, 'archived': false}).update({
+          archived: true
+        })
+      }
+
+      listings[message.aboutListing] = result.toJSON()
+      Logger.debug(result.toJSON())
+    })
+    
+    return view.render('mail.offers', { sellingMsg: sellingMsg.toJSON(), buyingMsg: buyingMsg.toJSON(), listings: listings })
+
+
   }
 
   async destroy ({ params, session, response, auth }) {
@@ -137,8 +212,7 @@ class MailController {
     if(msgType == MSG_REGULAR){
       return message
     } else {
-
-      return "Pending:"+tx.address+":"+tx.redeem.output.toString('hex')
+      return "Pending"
     }
   }
 
@@ -274,7 +348,6 @@ class MailController {
     msg.receiverUsername = toElite.username
     msg.receiverAddress = toElite.address
     msg.receiverPicture = toElite.picture
-    console.log("Sent message type: "+msgType)
     msg.msgType = msgType
     msg.message = _Message
     msg.archived = false

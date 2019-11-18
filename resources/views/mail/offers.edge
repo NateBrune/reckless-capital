@@ -1,7 +1,7 @@
 @layout('offersTemplate')
 
 @section('content')
-<script src="https://momentjs.com/downloads/moment.js"></script>
+<script src="/js/moment.js"></script>
 <script>
 
   function CopyToClipboard(containerid) {
@@ -85,13 +85,43 @@
     </div>
   @endif
   {{ elIf('<div class="notification is-warning">$self</div>', getErrorFor('notification'), hasErrorFor('notification')) }}
-  @each(message in messages)
+  @each(message in buyingMsg['data'])
     @if(message.msgType != 0)
       @if(message.receiverAddress == auth.user.address)
-        @!component('components.pendingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, lnAddress = lnAddress, listingOpenBy = listingOpenBy, listingSellerRefundAddress = listingSellerRefundAddress, listingAcceptBy = listingAcceptBy, csrfField = csrfField)
+        @!component('components.pendingListing', message = message, listings = listings, csrfField = csrfField)
       @else
-        @!component('components.payingListing', message = message, redeemScripts = redeemScripts, listingStatus = listingStatus, listingAddress = listingAddress, listingStipend = listingStipend, listingServiceFee = listingServiceFee, listingLiquidity = listingLiquidity, listingOpenUntil = listingOpenUntil, listingBuyerRefundAddress = listingBuyerRefundAddress, listingOpenBy = listingOpenBy, calculatedTotalSats = calculatedTotalSats, listingLastChanceToFund = listingLastChanceToFund, csrfField = csrfField, QRCode = QRCode)
+        @!component('components.payingListing', message = message, listings = listings, csrfField = csrfField, QRCode = QRCode)
       @endif
     @endif
   @endeach
+  @each(message in sellingMsg['data'])
+    @if(message.msgType != 0)
+      @if(message.receiverAddress == auth.user.address)
+        @!component('components.pendingListing', message = message, listings = listings, csrfField = csrfField)
+      @else
+        @!component('components.payingListing', message = message, listings = listings, csrfField = csrfField, QRCode = QRCode)
+      @endif
+    @endif
+  @endeach
+
+  <div class="box">
+    <nav class="pagination" role="navigation" aria-label="pagination">
+      <a class="pagination-previous" title="First Page" {{ messages.page == 1 ? 'href=#' : 'onclick=lastPage(' + messages.page + ')' }} >Previous</a>
+      <a class="pagination-next" {{ messages.lastPage == messages.page ? 'href=#' : 'onclick=nextPage(' + messages.page + ')' }} >Next page</a>
+      <ul class="pagination-list">
+        <!--href="?page={{ page }}"-->
+        @each(page in range(1, messages.lastPage+1))
+        @if(messages.page === page)
+        <li>
+          <a class="pagination-link is-current" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{'Page ' + page}}" aria-current="page">{{ page }}</a>
+        </li>
+        @else
+        <li>
+            <a class="pagination-link" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{ 'Goto page ' + page }}">{{ page }}</a>
+          </li>
+        @endif
+        @endeach
+      </ul>
+    </nav>
+  </div>
 @endsection

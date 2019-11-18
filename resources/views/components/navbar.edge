@@ -1,17 +1,91 @@
 <nav class="navbar" role="navigation" aria-label="main navigation">
-  <!-- <div class="navbar-brand">
-    <a class="navbar-item" href="https://bulma.io">
+  <div class="navbar-brand">
+    <!--<a class="navbar-item" href="/">
       <img src="img/menu.svg" width="112" height="28">
-    </a>
+    </a>-->
 
-    <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+    <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbar-secondary">
       <span aria-hidden="true"></span>
       <span aria-hidden="true"></span>
       <span aria-hidden="true"></span>
     </a>
-  </div> -->
+  </div>
 
-  <div id="navbar-primary" class="navbar-menu">
+  <div id="navbar-secondary" class="navbar-menu hidden">
+    <div class="navbar-start">
+      <a class="navbar-item" href="/">
+        <i class="fas fa-igloo"></i> &nbsp; Home
+      </a>
+      @loggedIn
+        <a class="navbar-item" href="/new">
+          <i class="fab fa-bitcoin"></i> &nbsp; Sell Liquidity
+        </a>
+      @endloggedIn
+    </div>
+
+    <!--<div class="navbar-end">
+      @loggedIn
+        <a class="navbar-item" href="/messages"> Check Messages  
+          @if(auth.user.hasMail)
+            <i class="fas fa-envelope-open-text"></i>
+          @else
+            <i class="far fa-envelope"></i>
+          @endif
+        </a>
+        @if(auth.user.hasOffer)
+          <a class="navbar-item" href="/offers">Check Offers <i class="fas fa-folder-open"></i></a>
+        @else
+          <a class="navbar-item" href="/offers">Check Offers <i class="far fa-folder"></i></a>
+        @endif
+        <a class="navbar-item" href="/settings">
+          Settings
+        </a>
+        <a class="navbar-item" href="/logout">
+          Log out
+        </a>
+      @else
+        <a class="navbar-item" href="/signup">
+          Create new account
+        </a>
+        <a class="navbar-item" href="/login">
+          Log in
+        </a>
+      @endloggedIn
+    </div>-->
+    <div class="navbar-end">
+      @loggedIn
+        <a class="navbar-item" href="/messages">
+          @if(auth.user.hasMail)
+          <i class="fas fa-envelope-open-text"></i> &nbsp; Messages  
+          @else
+          <i class="far fa-envelope"></i> &nbsp; Messages  
+          @endif
+        </a>
+        <a class="navbar-item" href="/offers">
+          @if(auth.user.hasOffer)
+            <i class="fas fa-folder-open"></i> &nbsp; Offers
+          @else
+            <i class="far fa-folder"></i> &nbsp; Offers  
+          @endif
+        </a>
+        <a class="navbar-item" href="/settings">
+          <i class="fas fa-cog"></i> &nbsp; Settings
+        </a>
+        <a class="navbar-item" href="/logout">
+          <i class="fas fa-dungeon"></i> &nbsp; Log out ({{ auth.user.username }})
+        </a>
+      @else
+        <a class="navbar-item" href="/signup">
+          <i class="fas fa-pen"></i> &nbsp; Create new account
+        </a>
+        <a class="navbar-item" href="/login">
+          <i class="fas fa-dungeon"></i> &nbsp; Log in
+        </a>
+      @endloggedIn
+    </div>
+  </div>
+
+  <!--<div id="navbar-primary" class="navbar-menu">
     <div class="navbar-start">
       <div class="navbar-item">
         <a class="button is-light" href="/">
@@ -52,10 +126,7 @@
       </div>
       <div class="navbar-item">
         <a class="button is-light" href="/settings">
-          <!--<figure class="image is-28x28">-->
-          <!--<img class="is-rounded" src="{{ auth.user.picture }}" alt="img/profile.png"></img>-->
           <img class="is-rounded" style="object-fit:cover; border-radius:50%;" src="{{ auth.user.picture }}" alt="img/profile.png"></img>
-          <!--</figure>-->
         </a>
       </div>
       <div class="navbar-item">
@@ -79,7 +150,33 @@
         </div>
       </div>
     @endloggedIn
-    
     </div>
-  </div>
+  </div> -->
 </nav>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+
+  // Get all "navbar-burger" elements
+  const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+  // Check if there are any navbar burgers
+  if ($navbarBurgers.length > 0) {
+
+    // Add a click event on each of them
+    $navbarBurgers.forEach( el => {
+      el.addEventListener('click', () => {
+
+        // Get the target from the "data-target" attribute
+        const target = el.dataset.target;
+        const $target = document.getElementById(target);
+
+        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+        el.classList.toggle('is-active');
+        $target.classList.toggle('is-active');
+
+      });
+    });
+  }
+
+  });
+</script>

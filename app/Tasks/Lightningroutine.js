@@ -26,7 +26,7 @@ class Lightningroutine extends Task {
   async markSellerRedeemable(listingId){
     var listing = await Listing.find(listingId)
     await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
-      message: "sellerRedeemable:"+listing.fundingAddress+":"+listing.redeemScript
+      message: "sellerRedeemable"
     })
     listing.sellerRedeemable = true
     listing.buyerRedeemable = false
@@ -35,16 +35,16 @@ class Lightningroutine extends Task {
     Logger.info(`Listing ${listingId} marked complete.`)
   }
 
-  async markBuyerRedeemable(listingId, reason="Reason N/A"){
+  async markBuyerRedeemable(listingId, reason="N/A"){
     var listing = await Listing.find(listingId)
     await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
-      message: "buyerRedeemable:"+listing.fundingAddress+":"+listing.redeemScript
+      message: "buyerRedeemable"
     })
     listing.sellerRedeemable = false
     listing.buyerRedeemable = true
     listing.consecutiveFailedCheckups = 99
     listing.save()
-    Logger.info(`Refunded listing: ${listingId}, ${reason}`)
+    Logger.info(`Refunded listing: ${listingId}, Reason: ${reason}`)
   }
 
   async handle () {
@@ -67,7 +67,7 @@ class Lightningroutine extends Task {
         continue
       }
       if(!listing.accepted && listing.lastChanceToAccept < (new Date().getTime() / 1000).toFixed(0)){
-        await this.markBuyerRedeemable(listing.id)
+        await this.markBuyerRedeemable(listing.id, "Seller didn't accept in time.")
         continue
       }
       
@@ -110,14 +110,14 @@ class Lightningroutine extends Task {
           foundChannel = true
           if(listing.channelOpen == false){
             await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
-              message: "channelOpen:"+listing.fundingAddress+":"+listing.redeemScript
+              message: "channelOpen"
             })
             var lsting = await Listing.find(listing.id)
             lsting.consecutiveFailedCheckups = 0
             lsting.channelOpen = true
             lsting.channelMustBeOpenUntil = ((new Date().getTime() + (listing.sellerPeriod*60*1000)) / 1000).toFixed(0) //(listing.sellerPeriod*24*60*60*1000)) / 1000).toFixed(0)
             await lsting.save()
-            console.log("First Seen, updated listing and message.")
+            Logger.debug("First Seen, updated listing and message.")
           }
 
           if( listing.channelMustBeOpenUntil && listing.channelMustBeOpenUntil < (new Date().getTime() / 1000).toFixed(0) ){
@@ -126,7 +126,7 @@ class Lightningroutine extends Task {
 
 
         } else {
-          console.log("skipping " + channel['capacity'] + " channel.")
+          Logger.debug("skipping " + channel['capacity'] + " channel.")
           continue
         }
       }
@@ -134,7 +134,7 @@ class Lightningroutine extends Task {
         continue
       
       if( listing.channelMustBeOpenUntil && listing.channelMustBeOpenUntil < Math.floor(new Date().getTime() / 1000) ){
-        console.log("expired? " + listing.channelMustBeOpenUntil + " " + Math.floor(new Date().getTime() / 1000))
+        Logger.debug("expired? " + listing.channelMustBeOpenUntil + " " + Math.floor(new Date().getTime() / 1000))
         continue // should be finished?
       }
 
@@ -144,22 +144,22 @@ class Lightningroutine extends Task {
       lsting.consecutiveFailedCheckups = lsting.consecutiveFailedCheckups + 1
       if(lsting.channelOpen){
         await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
-          message: "channelClosed:"+listing.fundingAddress+":"+listing.redeemScript
+          message: "channelClosed"
         })
       }
       lsting.channelOpen = false
 
       if(lsting.lastChanceToOpenChannel && lsting.lastChanceToOpenChannel < ((new Date().getTime() / 1000).toFixed(0))){
-        console.log("marking " + lsting.id  + " expired " + lsting.lastChanceToOpenChannel + " < " + ((new Date().getTime() / 1000).toFixed(0)))
+        Logger.debug("marking " + lsting.id  + " expired " + lsting.lastChanceToOpenChannel + " < " + ((new Date().getTime() / 1000).toFixed(0)))
         lsting.consecutiveFailedCheckups = 99
       } else {
-        //lsting.consecutiveFailedCheckups = 0 // Not expired, so just reset counter.
+        lsting.consecutiveFailedCheckups = 0 // Not expired, so just reset counter.
       }
 
-      console.log("Failing "+ listing.id +" current consecutive failed checkups: " + lsting.consecutiveFailedCheckups)
+      Logger.debug("Failing "+ listing.id +" current consecutive failed checkups: " + lsting.consecutiveFailedCheckups)
       //console.table(listing)
       if(lsting.consecutiveFailedCheckups > 2){
-        await this.markBuyerRedeemable(lsting.id)
+        await this.markBuyerRedeemable(lsting.id, "Seller closed channel early")
       }
       await lsting.save()
     }
