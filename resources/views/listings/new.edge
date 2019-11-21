@@ -1,10 +1,16 @@
 @layout('master')
 
 @section('content')
+
+@if(old('notification'))
+<div class="notification is-success">
+    {{ old('notification') }}
+</div>
+@endif
+
+<form action="/listLSAT" method="POST">
   <div class="box">
     <h2 class="title">New Listing</h2>
-
-    <form action="/listLSAT" method="POST">
       {{ csrfField() }}
 
         <!–– Owner's public key ––>
@@ -56,13 +62,6 @@
         <input type="number" id="period" name="period" oninput="update()" min="1" max="90">
         <label> Days </label>
       </div>
-
-        <!–– Place Listing ––>
-        <div class="control is-expanded">
-          <button type="submit" class="button is-medium is-fullwidth is-primary">
-              Add Listing
-          </button>
-        </div>
       
       <!–– Address used to create this listing ––>
       <div class="control">
@@ -73,13 +72,7 @@
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('hasLSAT'), hasErrorFor('hasLSAT')) }}
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('stipend'), hasErrorFor('stipend')) }}
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('period'), hasErrorFor('period')) }}
-    </form>
   </div>
-  @if(old('notification'))
-    <div class="notification is-success">
-        {{ old('notification') }}
-    </div>
-  @endif
   <div class="box">
     <div class="content">
       <h1> Final Offer </h1>
@@ -89,6 +82,13 @@
       <p> In order to earn the reward, you must keep the channel open for <label id="tdays"></label> days after the order is accepted.</p>
     </div>
   </div>
+  <!–– Place Listing ––>
+  <div class="control is-expanded">
+    <button type="submit" class="button is-medium is-fullwidth is-primary">
+        Add Listing
+    </button>
+  </div>
+</form>
 
   <script>
   function roundUp(num, precision) {

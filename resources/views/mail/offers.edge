@@ -57,25 +57,99 @@
     var sec = now.getSeconds()
     document.getElementById(containerid).innerHTML = ar[sec % 20]
   }
+  function updateURLParameter(url, param, paramVal){
+    var TheAnchor = null;
+    var newAdditionalURL = "";
+    var tempArray = url.split("?");
+    var baseURL = tempArray[0];
+    var additionalURL = tempArray[1];
+    var temp = "";
+
+    if (additionalURL) 
+    {
+      var tmpAnchor = additionalURL.split("#");
+      var TheParams = tmpAnchor[0];
+      TheAnchor = tmpAnchor[1];
+      if(TheAnchor)
+        additionalURL = TheParams;
+
+      tempArray = additionalURL.split("&");
+
+      for (var i=0; i<tempArray.length; i++)
+      {
+        if(tempArray[i].split('=')[0] != param)
+        {
+          newAdditionalURL += temp + tempArray[i];
+          temp = "&";
+        }
+      }        
+    }
+    else
+    {
+      var tmpAnchor = baseURL.split("#");
+      var TheParams = tmpAnchor[0];
+      TheAnchor  = tmpAnchor[1];
+
+      if(TheParams)
+        baseURL = TheParams;
+    }
+
+    if(TheAnchor)
+      paramVal += "#" + TheAnchor;
+
+    var rows_txt = temp + "" + param + "=" + paramVal;
+    return baseURL + "?" + newAdditionalURL + rows_txt;
+  }
+
+  function loadFilter(){
+    var text = document.getElementById("sortBy").value
+    var url = updateURLParameter(window.location.href, 'sortBy', text)
+    url = updateURLParameter(url, 'page', 1)
+    document.location.href = url
+    return
+  }
 </script>
 {{ script('js/qrcode.js') }}
 
 <div class="card">
   <div class="card-content">
-    <section class="hero">
-      <div class="hero-body">
-        <div class="container">
-          <h1 class="title">
-            Open Offers
-          </h1>
-          <h2 class="subtitle">
-            Offers which are pending, or currently active
-          </h2>
+    <div class="columns">
+      <div class="column is-three-quarters">
+        <section class="hero">
+          <div class="hero-body">
+            <div class="container">
+              <h1 class="title">
+                Open Offers
+              </h1>
+              <h2 class="subtitle">
+                Offers which are pending, or currently active
+              </h2>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="column is-one-quarter">
+          <div class="field is-grouped">
+            <div class="control">
+              <label class="label"> Sort by </label>
+              <div class="select" id="sortByContainer">
+                <select id="sortBy">
+                  <option value="buyer">Buyer</option>
+                  <option value="seller">Seller</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <p class="control">
+              <a class="button is-link" onclick="loadFilter()">Search</a>
+            </p>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
   </div>
-</div>
 <div>
 <br>
 </div>
@@ -85,21 +159,14 @@
     </div>
   @endif
   {{ elIf('<div class="notification is-warning">$self</div>', getErrorFor('notification'), hasErrorFor('notification')) }}
-  @each(message in buyingMsg['data'])
+  @each(message in messages['data'])
     @if(message.msgType != 0)
       @if(message.receiverAddress == auth.user.address)
         @!component('components.pendingListing', message = message, listings = listings, csrfField = csrfField)
+        <br>
       @else
         @!component('components.payingListing', message = message, listings = listings, csrfField = csrfField, QRCode = QRCode)
-      @endif
-    @endif
-  @endeach
-  @each(message in sellingMsg['data'])
-    @if(message.msgType != 0)
-      @if(message.receiverAddress == auth.user.address)
-        @!component('components.pendingListing', message = message, listings = listings, csrfField = csrfField)
-      @else
-        @!component('components.payingListing', message = message, listings = listings, csrfField = csrfField, QRCode = QRCode)
+        <br>
       @endif
     @endif
   @endeach

@@ -1,340 +1,211 @@
 @layout('master')
 
 @section('content')
-      <script>
-        function toggleModal(id) {
-          var modal = document.getElementById("modal-"+id)
-          modal.classList.toggle("is-active")
-        }
-        function updateURLParameter(url, param, paramVal){
-          var TheAnchor = null;
-          var newAdditionalURL = "";
-          var tempArray = url.split("?");
-          var baseURL = tempArray[0];
-          var additionalURL = tempArray[1];
-          var temp = "";
+<script>
+  function toggleModal(id) {
+    var modal = document.getElementById("modal-"+id)
+    modal.classList.toggle("is-active")
+  }
 
-          if (additionalURL) 
-          {
-            var tmpAnchor = additionalURL.split("#");
-            var TheParams = tmpAnchor[0];
-            TheAnchor = tmpAnchor[1];
-            if(TheAnchor)
-              additionalURL = TheParams;
+  function loadFilter(){
+    //var sortBy = document.getElementById("sortBy").value
+    var text = document.getElementById("sortBy").value
+    var url = updateURLParameter(window.location.href, 'sortBy', text)
+    url = updateURLParameter(url, 'page', 1)
 
-            tempArray = additionalURL.split("&");
-
-            for (var i=0; i<tempArray.length; i++)
-            {
-              if(tempArray[i].split('=')[0] != param)
-              {
-                newAdditionalURL += temp + tempArray[i];
-                temp = "&";
-              }
-            }        
-          }
-          else
-          {
-            var tmpAnchor = baseURL.split("#");
-            var TheParams = tmpAnchor[0];
-            TheAnchor  = tmpAnchor[1];
-
-            if(TheParams)
-              baseURL = TheParams;
-          }
-
-          if(TheAnchor)
-            paramVal += "#" + TheAnchor;
-
-          var rows_txt = temp + "" + param + "=" + paramVal;
-          return baseURL + "?" + newAdditionalURL + rows_txt;
-        }
-
-        function loadFilter(){
-          //var sortBy = document.getElementById("sortBy").value
-          var text = document.getElementById("sortBy").value
-          var url = updateURLParameter(window.location.href, 'sortBy', text)
-
-          //var min = document.getElementById("min").innerHTML
-          //url = updateURLParameter(url, 'min', min)
-
-          //var max = document.getElementById("max").innerHTML
-          //url = updateURLParameter(url, 'max', max)
-
-          document.location.href = url
-          return
-        }
-        
-        function loadPage(page){
-          var url = updateURLParameter(window.location.href, 'page', page)
-          document.location.href = url
-        }
-
-      </script>
-      <div class="card">
-        <div class="card-content">
-          <div class="columns">
-            <div class="column is-three-quarters">
-              <section class="hero">
-                <div class="hero-body">
-                  <div class="container">
-                    <h1 class="title">
-                      Listings
-                    </h1>
-                    <h2 class="subtitle">
-                      Offers for liquidity 
-                    </h2>
-                    
-                    {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
-                  </div>
-                </div>
-              </section>
-            </div>
-            <div class="column is-one-quarter">
-              <div class="field is-grouped">
-                <div class="control">
-                  <label class="label"> Sort by </label>
-                  <div class="select" id="sortByContainer">
-                    <select id="sortBy">
-                      <option value="newest">Newest</option>
-                      <option value="lowest_fee">Lowest Fee</option>
-                      <option value="longest_term">Longest Term</option>
-                      <option value="shortest_term">Shortest Term</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <!--
-              <div class="field is-grouped">
-                <div class="control">
-                  <label class="label"> Minimum Term </label>
-                  <input type="number" id="min" name="min" min="1" max="90" value="{{ old('min', '') }}"> <label> Days </label>
-                </div>
-              </div>
+    document.location.href = url
+    return
+  }
+</script>
+<div class="card">
+  <div class="card-content">
+    <div class="columns">
+      <div class="column is-three-quarters">
+        <section class="hero">
+          <div class="hero-body">
+            <div class="container">
+              <h1 class="title">
+                Listings
+              </h1>
+              <h2 class="subtitle">
+                Offers for liquidity 
+              </h2>
               
-              <div class="field is-grouped">
-                <div class="control">
-                  <label class="label"> Maximum Term </label>
-                  <input type="number" id="max" name="max" min="1" max="90" value="{{ old('max', '') }}"> <label> Days </label>
-                </div>
-              </div>
-              -->
-
-              <div class="field">
-                <p class="control">
-                  <a class="button is-link" onclick="loadFilter()">Search</a>
-                </p>
-              </div>
+              {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="column is-one-quarter">
+        <div class="field is-grouped">
+          <div class="control">
+            <label class="label"> Sort by </label>
+            <div class="select" id="sortByContainer">
+              <select id="sortBy">
+                <option value="newest">Newest</option>
+                <option value="lowest_fee">Lowest Fee</option>
+                <option value="longest_term">Longest Term</option>
+                <option value="shortest_term">Shortest Term</option>
+              </select>
             </div>
           </div>
         </div>
-      </div>
-      <div>
-      <br>
-      </div>
-      <!--<div class="card">
-        <div class="card-content">
-
-        </div>
-      </div>
-      <br>-->
-      @if(old('notification'))
-        <div class="notification is-success">
-            {{ old('notification') }}
-        </div>
-      @endif
-  
-      @each(listing in listings['data'])
-      @if(!listing.pendingAccept)
-      <div class="box">
-        <article class="media">
-          <div class="media-left">
-            <figure class="image is-64x64">
-              <img class="is-rounded" src="{{ listing.picture }}" alt="img/profile.png">
-            </figure>
+        <!--
+        <div class="field is-grouped">
+          <div class="control">
+            <label class="label"> Minimum Term </label>
+            <input type="number" id="min" name="min" min="1" max="90" value="{{ old('min', '') }}"> <label> Days </label>
           </div>
-          <div class="media-content">
-            <div class="is-pulled-right">
-              @if(auth.user.publicKey == listing.sellerPublicKey)
-                <form action="{{ 'listings/' + listing.id + '?_method=DELETE' }}" method="POST">
-                  {{ csrfField() }}
-                  <button type="submit" class="button is-danger is-outlined is-fullwidth">
-                    <span>DELETE</span>
-                    <span class="icon is-small">
-                      <i class="fa fa-times" aria-hidden="true"></i>
-                    </span>
-                  </button>
-                </form>
-              @else
-                <div id="{{ 'modal-' + listing.id }}" class="modal is-clipped">
-                    <div class="modal-background"></div>
-                    <div class="modal-card">
-                      <header class="modal-card-head">
-                        <p class="modal-card-title">Transaction Details</p>
-                        <button class="delete" aria-label="close" onclick="{{ 'toggleModal(' + listing.id + ')' }}"></button>
-                      </header>
-                      <form action="{{ 'sendMsg/' + listing.id }}" method="POST">
-                        <section class="modal-card-body is-active">
-                          {{ csrfField() }}
-                          <input type="hidden" name="toElite" value="{{ listing.username }}">
-                          <input type="hidden" name="message" value="{{ auth.user.address +' would like ' + listing.hasLSAT +' BTC liquidity' }}">
-                          Lighting address you wish to purchase liquidity for.
-                          <div class="field has-addons">
-                            <div class="control has-icons-left is-expanded">
-                              <input class="input" type="text" name="buyerNodePublicKey" value="{{ old('buyerNodePublicKey', '') }}" placeholder="Lightning Address e.g. 02672017ca6ef11a6c347179151365d50f23279b5c741111bdccde6ecbcbe72ecf@lnnv64gja8nkhztf5cvlul3jylvi6fc76l5si2sutga2qb6zcab124qd.onion:9735">
-                              <span class="icon is-small is-left">
-                                <i class="fas fa-key"></i>
-                              </span>
-                            </div>
-                          </div>
-                          Your personal Bitcoin address to be used in case a dispute arises.
-                          <div class="field has-addons">
-                            <div class="control has-icons-left is-expanded">
-                              <input class="input" type="text" name="buyerRefundAddress" value="{{ auth.user.refundAddress || old('buyerRefundAddress', '') }}" placeholder="Refund address e.g. 2MvbbAFe4bwVanGCJUMt3DT72CoMYFK9LS2">
-                              <span class="icon is-small is-left">
-                                <i class="fas fa-key"></i>
-                              </span>
-                            </div>
-                          </div>
-                          <br>
-                          <h1> Final Deal </h1>
-                          <br>
-                          <p> Buying {{ listing.hasLSAT }} BTC of capacity from {{ listing.username }}.</p>
-                          <p> The seller fee will be {{ listing.stipend }} BTC </p>
-                          <p> The service fee will be {{ listing.servicefee }} BTC  (0.5%)</p>
-                          <p> The Total fee will be {{ listing.servicefee + listing.stipend }} BTC </p>
-                          <p> Then channel will be open for {{ listing.sellerPeriod }} days. </p>
-                          <p> If above conditions are not met the transaction will be terminated and funds will be immediately redeemable by you.</p>
-                          <br>
-                          <p> The next page will prompt you to fund the above transaction by sending {{ listing.servicefee + listing.stipend }} BTC to a provided Bitcoin address </p>
-                        
-                        </section>
-                        <footer class="modal-card-foot">
-                          <button class="button is-success" type="submit">Next Step</button>
-                          <button class="button" onclick="{{ 'toggleModal(' + listing.id + ')' }}">Cancel</button>
-                        </footer>
-                      </form>
+        </div>
+        
+        <div class="field is-grouped">
+          <div class="control">
+            <label class="label"> Maximum Term </label>
+            <input type="number" id="max" name="max" min="1" max="90" value="{{ old('max', '') }}"> <label> Days </label>
+          </div>
+        </div>
+        -->
+
+        <div class="field">
+          <p class="control">
+            <a class="button is-link" onclick="loadFilter()">Search</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div>
+<br>
+</div>
+<!--<div class="card">
+  <div class="card-content">
+
+  </div>
+</div>
+<br>-->
+@if(old('notification'))
+  <div class="notification is-success">
+      {{ old('notification') }}
+  </div>
+@endif
+
+@each(listing in listings['data'])
+@if(!listing.pendingAccept)
+<div class="box">
+  <article class="media">
+    <div class="media-left">
+      <figure class="image is-64x64">
+        <img class="is-rounded" src="{{ listing.picture }}" alt="img/profile.png">
+      </figure>
+    </div>
+    <div class="media-content">
+      <div class="is-pulled-right">
+        @if(auth.user.publicKey == listing.sellerPublicKey)
+          <form action="{{ 'listings/' + listing.id + '?_method=DELETE' }}" method="POST">
+            {{ csrfField() }}
+            <button type="submit" class="button is-danger is-outlined is-fullwidth">
+              <span>DELETE</span>
+              <span class="icon is-small">
+                <i class="fa fa-times" aria-hidden="true"></i>
+              </span>
+            </button>
+          </form>
+        @else
+          <div id="{{ 'modal-' + listing.id }}" class="modal is-clipped">
+              <div class="modal-background"></div>
+              <div class="modal-card">
+                <header class="modal-card-head">
+                  <p class="modal-card-title">Transaction Details</p>
+                  <button class="delete" aria-label="close" onclick="{{ 'toggleModal(' + listing.id + ')' }}"></button>
+                </header>
+                <form action="{{ 'sendMsg/' + listing.id }}" method="POST">
+                  <section class="modal-card-body is-active">
+                    {{ csrfField() }}
+                    <input type="hidden" name="toElite" value="{{ listing.username }}">
+                    <input type="hidden" name="message" value="{{ auth.user.address +' would like ' + listing.hasLSAT +' BTC liquidity' }}">
+                    Lighting address you wish to purchase liquidity for.
+                    <div class="field has-addons">
+                      <div class="control has-icons-left is-expanded">
+                        <input class="input" type="text" name="buyerNodePublicKey" value="{{ old('buyerNodePublicKey', '') }}" placeholder="Lightning Address e.g. 02672017ca6ef11a6c347179151365d50f23279b5c741111bdccde6ecbcbe72ecf@lnnv64gja8nkhztf5cvlul3jylvi6fc76l5si2sutga2qb6zcab124qd.onion:9735">
+                        <span class="icon is-small is-left">
+                          <i class="fas fa-key"></i>
+                        </span>
+                      </div>
                     </div>
-                </div>
-                <button onclick="{{ 'toggleModal(' + listing.id + ')' }}" class="button is-outlined is-fullwidth">
-                  <span>BUY</span>
-                </button>
-              @endif
-            </div>
-            <div class="content">
-              <p>
-                <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a> <small> is selling </small> <strong>{{ listing.hasLSAT }} lBTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
-                <br>
-                Fee is <strong> {{ listing.stipend + listing.servicefee }} BTC</strong>
-                <br>
-              <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
-              <script>
-                var selpubkey = "{{ listing.sellerNodePublicKey }}"
-                var link = document.getElementById("{{ 'href-' + listing.id }}")
-                link.setAttribute("href", 'https://1ml.com/node/' + selpubkey.split('@')[0])
-              </script>
-              </p>
-            </div>
+                    Your personal Bitcoin address to be used in case a dispute arises.
+                    <div class="field has-addons">
+                      <div class="control has-icons-left is-expanded">
+                        <input class="input" type="text" name="buyerRefundAddress" value="{{ auth.user.refundAddress || old('buyerRefundAddress', '') }}" placeholder="Refund address e.g. 2MvbbAFe4bwVanGCJUMt3DT72CoMYFK9LS2">
+                        <span class="icon is-small is-left">
+                          <i class="fas fa-key"></i>
+                        </span>
+                      </div>
+                    </div>
+                    <br>
+                    <strong><p> The next page will prompt you to fund the above transaction by sending {{ listing.servicefee + listing.stipend }} BTC to a provided Bitcoin address </p></strong>
+                    <br>
+                    <h1> Final Deal </h1>
+                    <br>
+                    <p> Buying {{ (listing.hasLSAT).toFixed(8) }} BTC of capacity from {{ listing.username }}.</p>
+                    <p> The seller fee will be {{ (listing.stipend).toFixed(8) }} BTC </p>
+                    <p> The service fee will be {{ (listing.servicefee).toFixed(8) }} BTC  (0.5%)</p>
+                    <p> The Total fee will be {{ listing.servicefee + listing.stipend }} BTC </p>
+                    <p> Then channel will be open for {{ listing.sellerPeriod }} days. </p>
+                    <p> If above conditions are not met the transaction will be terminated and funds will be immediately redeemable by you.</p>
+                    
+                    
+                  
+                  </section>
+                  <footer class="modal-card-foot">
+                    <button class="button is-success" type="submit">Next Step</button>
+                    <button class="button" onclick="{{ 'toggleModal(' + listing.id + ')' }}">Cancel</button>
+                  </footer>
+                </form>
+              </div>
           </div>
-        </article>
+          <button onclick="{{ 'toggleModal(' + listing.id + ')' }}" class="button is-outlined is-fullwidth">
+            <span>BUY</span>
+          </button>
+        @endif
       </div>
+      <div class="content">
+        <p>
+          <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a> <small> is selling </small> <strong>{{ listing.hasLSAT }} lBTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
+          <br>
+          Fee is <strong> {{ listing.stipend + listing.servicefee }} BTC</strong>
+          <br>
+        <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
+        <script>
+          var selpubkey = "{{ listing.sellerNodePublicKey }}"
+          var link = document.getElementById("{{ 'href-' + listing.id }}")
+          link.setAttribute("href", 'https://1ml.com/node/' + selpubkey.split('@')[0])
+        </script>
+        </p>
+      </div>
+    </div>
+  </article>
+</div>
+@endif
+@endeach
+<div class="box">
+  <nav class="pagination" role="navigation" aria-label="pagination">
+    <a class="pagination-previous" title="This is the first page" href="{{ listings.page == 1 ? '#' : '?page=' + (listings.page - 1) }}">Previous</a>
+    <a class="pagination-next" href="{{ listings.lastPage == listings.page ? '#' : '?page=' + (listings.page + 1) }}">Next page</a>
+    <ul class="pagination-list">
+      <!--href="?page={{ page }}"-->
+      @each(page in range(1, listings.lastPage+1))
+      @if(listings.page === page)
+      <li>
+        <a class="pagination-link is-current" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{'Page ' + page}}" aria-current="page">{{ page }}</a>
+      </li>
+      @else
+      <li>
+          <a class="pagination-link" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{ 'Goto page ' + page }}">{{ page }}</a>
+        </li>
       @endif
       @endeach
-      <div class="box">
-        <nav class="pagination" role="navigation" aria-label="pagination">
-          <a class="pagination-previous" title="This is the first page" href="{{ listings.page == 1 ? '#' : '?page=' + (listings.page - 1) }}">Previous</a>
-          <a class="pagination-next" href="{{ listings.lastPage == listings.page ? '#' : '?page=' + (listings.page + 1) }}">Next page</a>
-          <ul class="pagination-list">
-            <!--href="?page={{ page }}"-->
-            @each(page in range(1, listings.lastPage+1))
-            @if(listings.page === page)
-            <li>
-              <a class="pagination-link is-current" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{'Page ' + page}}" aria-current="page">{{ page }}</a>
-            </li>
-            @else
-            <li>
-                <a class="pagination-link" onclick="{{ 'loadPage(' + page + ')' }}" aria-label="{{ 'Goto page ' + page }}">{{ page }}</a>
-              </li>
-            @endif
-            @endeach
-          </ul>
-        </nav>
-      </div>
-      <!--
-      <ul>
-        <li>
-          <a href="{{ listings.page == 1 ? '#' : '?page=' + (listings.page - 1) }}">Previous</a>
-        </li>
-        @each(page in range(1, listings.lastPage+1))
-          <li>
-            <a href="?page={{ page }}">{{ page }}</a>
-          </li>
-        @endeach
-        <li>
-          <a href="{{ listings.lastPage == listings.page ? '#' : '?page=' + (listings.page + 1) }}">Next</a>
-        </li>
-      </ul>
-      -->
-      <!--
-      <table class="table is-bordered is-striped is-narrow is-fullwidth is-hoverable sortable">
-        <thead>
-          <tr>
-            <th>Profile</th>
-            <th>Public Key</th>
-            <th>Liquidity</th>
-            <th>Stipend</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          @each(listing in listings)
-          @if(!listing.pendingAccept)
-            <tr>
-              <td>
-                {{ listing.username || listing.sellerAddress }}
-              </td>
-              <td>
-                {{ listing.sellerNodePublicKey }}
-              </td>
-              <td>
-                {{ listing.hasLSAT }}
-              </td>
-              <td>
-                {{ listing.stipend }}
-              </td>
-              <td>
-              @if(auth.user.publicKey == listing.sellerPublicKey)
-                <form action="{{ 'listings/' + listing.id + '?_method=DELETE' }}" method="POST">
-                  {{ csrfField() }}
-                  <button type="submit" class="button is-danger is-outlined">
-                    <span>DELETE</span>
-                    <span class="icon is-small">
-                      <i class="fa fa-times" aria-hidden="true"></i>
-                    </span>
-                  </button>
-                </form>
-              @else
-                <form action="{{ 'sendMsg/' + listing.id }}" method="POST">
-                  {{ csrfField() }}
-                  <input type="hidden" name="toElite" value="{{ listing.username }}">
-                  <input type="hidden" name="message" value="{{ auth.user.address +' would like ' + listing.hasLSAT +' BTC liquidity' }}">
-                  <button type="submit" class="button is-outlined">
-                    <span>BUY</span>
-                    <span class="icon is-small">
-                      <i class="fa fa-times" aria-hidden="true"></i>
-                    </span>
-                  </button>
-                </form>
-              @endif
-              </td>
-            </tr>
-          @endif
-          @else
-            <tr>
-              <td colspan="5" class="has-text-centered">No offers available at this time :(</td>
-            </tr>
-          @endeach
-        </tbody>
-      </table>
-      -->
+    </ul>
+  </nav>
+</div>
 @endsection

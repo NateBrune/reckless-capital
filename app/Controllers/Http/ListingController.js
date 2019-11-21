@@ -89,7 +89,7 @@ class ListingController {
     const validation = await validate(request.all(), {
       owner: 'required',
       hasLSAT: 'required|range:0.000001,0.16777216',
-      stipend: 'required|range:0.00000001,10.0',
+      stipend: 'required|range:0.0000075,10.0',
       period: 'required|range:0,91',
     })
   

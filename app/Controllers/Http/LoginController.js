@@ -241,7 +241,7 @@ class LoginController {
           
           await elite.save() // Finish registration process
         }
-        session.flash({ notification: 'logged in successfully'})
+        //session.flash({ notification: 'logged in successfully'})
         await auth.login(elite)
         return response.redirect('/')
 

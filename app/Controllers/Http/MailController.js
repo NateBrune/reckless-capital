@@ -88,68 +88,24 @@ class MailController {
 
     var all = request.all()
     var page = all['page']
+    var sortBy = all['sortBy']
     if(page === undefined){
       page = 1
     }
-    /*
-    var queryMsg = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).paginate(page, 10)
-    var messages = []
-    var json = queryMsg.toJSON()
-    json['data'].forEach((message)=>messages.push(message))
-    queryMsg = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).paginate(page, 10)
-    json = queryMsg.toJSON()
-    json['data'].forEach((message)=>messages.push(message))
-
-    var redeemScripts = {}
-    var listingAddress = {}
-    var listingStatus = {}
-    var listingLiquidity = {}
-    var listingStipend = {}
-    var listingServiceFee = {}
-    var listingOpenUntil = {}
-    var lnAddress = {}
-    var listingBuyerRefundAddress = {}
-    var listingSellerRefundAddress = {}
-    var listingOpenBy = {}
-    var listingAcceptBy = {}
-    var calculatedTotalSats = {}
-    var listingLastChanceToFund = {}
-    await this.asyncForEach (messages, async (message) => {
-      if(message.msgType == MSG_BUY_REQUEST){
-        // TODO: clean this up await Listing.query().where('id', message.aboutListing).fetch().then((result)=>result.toJSON()) 
-        const listing = await Listing.find(message.aboutListing)
-        if(listing !== null){
-          redeemScripts[message.aboutListing] = listing.redeemScript
-          listingAddress[message.aboutListing] = listing.fundingAddress
-          listingStatus[message.aboutListing] = message.message.split(":")[0].toLowerCase() // this should be fixed?
-          listingLiquidity[message.aboutListing] = listing.hasLSAT
-          listingStipend[message.aboutListing] = listing.stipend
-          listingServiceFee[message.aboutListing] = listing.servicefee
-          lnAddress[message.aboutListing] = listing.buyerNodePublicKey
-          listingOpenUntil[message.aboutListing] = listing.channelMustBeOpenUntil
-          listingBuyerRefundAddress[message.aboutListing] = listing.buyerAddress
-          listingSellerRefundAddress[message.aboutListing] = listing.sellerAddress
-          listingOpenBy[message.aboutListing] = listing.lastChanceToOpenChannel
-          listingAcceptBy[message.aboutListing] = listing.lastChanceToAccept
-          listingLastChanceToFund[message.aboutListing] = listing.lastChanceToFund
-          calculatedTotalSats[message.aboutListing] = new Number((Math.round(listing.stipend*100000000)+Math.round(listing.servicefee*100000000)) / 100000000).toFixed(8)
-        } else {
-          console.log("message " + message.id + " found to have unknown aboutListing: " + message.aboutListing)
-          //await Message.query().where('aboutListing', message.aboutListing).delete()
-          await Message.query().where({'aboutListing': message.aboutListing, 'archived': false}).update({
-            archived: true
-          })
-        }
-      }
-    })
-
-    return view.render('mail.offers', { messages: messages, redeemScripts: redeemScripts, listingAddress: listingAddress, listingStatus: listingStatus, listingLiquidity: listingLiquidity, listingStipend: listingStipend, listingServiceFee: listingServiceFee, listingOpenUntil: listingOpenUntil, lnAddress: lnAddress, listingBuyerRefundAddress: listingBuyerRefundAddress, listingOpenBy: listingOpenBy, listingSellerRefundAddress: listingSellerRefundAddress, listingAcceptBy: listingAcceptBy, calculatedTotalSats: calculatedTotalSats, listingLastChanceToFund: listingLastChanceToFund })
-    */
-    var sellingMsg = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
-    var buyingMsg = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
+    if(sortBy === undefined){
+      sortBy = "buyer"
+    }
+    var messages = undefined
+    if(sortBy == "buyer"){
+      messages = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 2)
+    } else if(sortBy == "seller") {
+      messages = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 2)
+    } else {
+      
+    }
     var listings = {}
-    
-    await this.asyncForEach (buyingMsg.rows, async (message) => {
+      
+    await this.asyncForEach (messages.rows, async (message) => {
       var result = await Listing.query().where('id', message.aboutListing).first()
 
       if(result === null){
@@ -160,23 +116,7 @@ class MailController {
 
       listings[message.aboutListing] = result.toJSON()
     })
-
-    await this.asyncForEach (sellingMsg.rows, async (message) => {
-      var result = await Listing.query().where('id', message.aboutListing).first()
-
-      if(result === null){
-        await Message.query().where({'aboutListing': message.aboutListing, 'archived': false}).update({
-          archived: true
-        })
-      }
-
-      listings[message.aboutListing] = result.toJSON()
-      Logger.debug(result.toJSON())
-    })
-    
-    return view.render('mail.offers', { sellingMsg: sellingMsg.toJSON(), buyingMsg: buyingMsg.toJSON(), listings: listings })
-
-
+    return view.render('mail.offers', { messages: messages.toJSON(), listings: listings })
   }
 
   async destroy ({ params, session, response, auth }) {
@@ -189,7 +129,7 @@ class MailController {
       const listing = await Listing.find(message.aboutListing)
       // Put listing back on the map
       if(listing != null){
-        if(listing.consecutiveFailedCheckups == 99){
+        if(listing.consecutiveFailedCheckups == 99 && !(listing.sellerRedeemable || listing.buyerRedeemable || listing.funded || listing.inMempool)){
           var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, false, -1)
         } else if(listing.funded == false){
           await this.wallet.resetListing(message.aboutListing)

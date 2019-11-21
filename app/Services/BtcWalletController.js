@@ -189,7 +189,7 @@ class BtcWalletController {
                 var totalSats = Math.round(new Number(detail['amount']) * 100000000)
                 var extra = totalSats - Math.round(new Number(listing.stipend) * 100000000) - Math.round(new Number(listing.servicefee) * 100000000 ) 
                 listing.fundingTransactionExtra = extra
-                listing.lastChanceToAccept = ((new Date().getTime() + (5*60*1000)) / 1000).toFixed(0)//(24*60*60*1000)) / 1000).toFixed(0)
+                listing.lastChanceToAccept = ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0)
                 console.log("funded: "+ listing.fundingTransactionAmount)
                 listing.save()
                 message.message = "funded"

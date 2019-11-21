@@ -22,9 +22,11 @@
             <div class="box">
               <article class="media">
                 <div class="media-content">
-                  <div class="is-pulled-right">
-                    <i class="fas fa-exclamation-triangle"></i>
-                  </div>
+                  @if(message.message != "sellerRedeemable")
+                    <div class="is-pulled-right">
+                      <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                  @endif
                   <div class="content">
                   @if(message.message == "Pending")
                     <p id="{{ 'paymentMsg-' + message.aboutListing }}">
@@ -32,7 +34,7 @@
                     <script>
                       var fundBy = moment.unix({{ listings[message.aboutListing].lastChanceToFund }}).format("LLLL")
                       var calculatedSats = new Number((Math.round({{ listings[message.aboutListing].stipend }}*100000000)+Math.round({{ listings[message.aboutListing].servicefee }}*100000000)) / 100000000).toFixed(8)
-                      var template = '<small>Pay</small><strong> ' + calculatedSats +" BTC </strong> to the following address by the time shown below. Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.<br><center>" + fundBy + "<br> <p id="{{ 'address-' + message.aboutListing }}">{{ listings[message.aboutListing].fundingAddress }}</p></center>"
+                      var template = "<small>Pay</small><strong> " + calculatedSats +" BTC </strong> to the following address by the time shown below. Bitcoin payments can take a while to process. Once you've sent a payment refresh this page to view the status.<br><center>" + fundBy + "<br> <p id={{ 'address-' + message.aboutListing}}>{{ listings[message.aboutListing].fundingAddress }}</p></center>"
                       document.getElementById("{{ 'paymentMsg-' + message.aboutListing }}").innerHTML = template
                     </script>
                   @elseif(message.message == "mempool")
@@ -49,7 +51,7 @@
                       <p id="{{ 'satoshiquote-'+message.aboutListing }}"></p>
                     </p>
                     <script>getQuote("{{ 'satoshiquote-'+message.aboutListing }}")</script>
-                  @elseif(message.message == "channelclosed")
+                  @elseif(message.message == "channelClosed")
                     <p>
                       Channel was closed, a refund will occur if this channel misses three checks in a row.
                     </p>
@@ -70,24 +72,21 @@
                     <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
                     <br>
                     <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
+                  @elseif(message.message == "sellerRedeemable")
+                  <p id="{{ 'sellerRedeemable-' + message.aboutListing }}">  {{ listings[message.aboutListing].channelMustBeOpenUntil }}
+                  </p>
+                  <script>
+                      var formatted = moment.unix({{ listings[message.aboutListing].lastChanceToOpenChannel }}).format("LLLL") 
+                      document.getElementById("{{ 'sellerRedeemable-' + message.aboutListing }}").innerHTML = "Transaction completed on " + formatted + ". Your reputation has increased by +1!"
+                  </script>
                   @endif
                   </div>
                 </div>
               </article>
             </div>
-            <!--
-            <article class="message is-medium">
-              <div class="message-header">
-                <p class="is-relative">Payment Address</p>
-              </div>
-              <!-- On one line to remove newline while copying div --><!--
-              <div id="{{ 'address'+message.aboutListing }}" class="message-body" style="word-wrap: break-word"><strong>{{ listings[message.aboutListing].fundingAddress }}</strong></div>
-            </article>
-            -->
             <a class="button is-medium is-grey-light is-fullwidth" onclick="{{ 'toggleElement("redeemScript-' + message.aboutListing +'")' }}">Show Redeem Script</a>
             <div class="columns" id="{{ 'redeemScript-' + message.aboutListing }}" style="display: none;">
               <div class="column is-one-third">
-                <!-- <a class="button" onclick="toggleElement('redeemScript')">Show Redeem Script</a> -->
                 <p>The redeem script can be used to recover BTC in the event the website shuts down unexpectedly</p>
               </div>
               <div class="column is-two-thirds">
@@ -103,14 +102,11 @@
                 </div>
               </div>
             </div>
-<!--          @if(message.message == "Pending" || message.message == "funded" || message.message == "mempool") -->
           </div>
-<!--          @endif -->
-<!--          @if(message.message == "Pending" || message.message == "funded" || message.message == "mempool") -->
           <div class="column is-one-fifth ">
           @if(message.message == "funded" || message.message == "mempool")
             <div class="box">
-              <center><h1>&#10003;</h1></center> <!--<img src="/img/smile.png" />-->
+                <center><h1><i class="fas fa-hourglass-half"></i></h1></center>  <!--&#10003;</h1></center> <!--<img src="/img/smile.png" />-->
             </div>
             
           @elseif(message.message == "Pending")
@@ -132,27 +128,29 @@
             qrcode.makeCode("{{{ 'bitcoin:' + listings[message.aboutListing].fundingAddress + '?amount=' + listings[message.aboutListing].stipend + '&label=Atlanta-Liquidity-Project' }}}")
             </script>
           @elseif(message.message == "channelOpen")
-          <div class="notification is-success">
-          <center><p>
-            Channel is open. It will remain open until <p id="{{ 'until-'+message.aboutListing }}"></p>
-            <script>   
-              document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listings[message.aboutListing].channelMustBeOpenUntil }}).format("LLLL")
-            </script>
-            </p></center>
-          </div>
+            <div class="notification is-success">
+            <center><p>
+              Channel is open. It will remain open until <p id="{{ 'until-'+message.aboutListing }}"></p>
+              <script>   
+                document.getElementById("{{ 'until-'+message.aboutListing }}").innerHTML = moment.unix({{ listings[message.aboutListing].channelMustBeOpenUntil }}).format("LLLL")
+              </script>
+              </p></center>
+            </div>
           @elseif(message.message == "buyerRedeemable")
-          <div class="notification is-primary">
-            <center>Redeemable!</center>
-          </div>
+            <div class="notification is-primary">
+              <center>Redeemable!</center>
+            </div>
+          @elseif(message.message == "sellerRedeemable")
+            <div class="notification is-light">
+              <center>Complete!</center>
+            </div>
           @else
-          <div class="notification is-danger">
-            <center><p> server error unexpected state: {{ message.message}}. </p></center>
-            <p> We have assembled a crack team of misfits to deal with issues like these; please get in contact if this error continues to occur. </p>
-          </div>
+            <div class="notification is-danger">
+              <center><p> server error unexpected state: {{ message.message}}. </p></center>
+              <p> We have assembled a crack team of misfits to deal with issues like these; please get in contact if this error continues to occur. </p>
+            </div>
           @endif
           </div>
-<!--          @endif -->
-          
         </div>
         @if(message.message == "Pending")
           <span class="is-pulled-right">
@@ -163,8 +161,6 @@
         <script>
           document.getElementById("{{ 'created-at-' + message.aboutListing }}").innerHTML = "Created at: " + moment("{{ listings[message.aboutListing].created_at }}").format("LLLL")
         </script>
-<!--      @if(message.message == "Pending" || message.message == "funded" || message.message == "mempool") -->
       </div>
-<!--      @endif -->
     </div>
   </div>

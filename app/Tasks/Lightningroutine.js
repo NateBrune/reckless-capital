@@ -116,8 +116,12 @@ class Lightningroutine extends Task {
             lsting.consecutiveFailedCheckups = 0
             lsting.channelOpen = true
             lsting.channelMustBeOpenUntil = ((new Date().getTime() + (listing.sellerPeriod*60*1000)) / 1000).toFixed(0) //(listing.sellerPeriod*24*60*60*1000)) / 1000).toFixed(0)
+            lsting.accepted = true
             await lsting.save()
             Logger.debug("First Seen, updated listing and message.")
+          } else {
+            var lsting = await Listing.find(listing.id)
+            lsting.consecutiveFailedCheckups = 0
           }
 
           if( listing.channelMustBeOpenUntil && listing.channelMustBeOpenUntil < (new Date().getTime() / 1000).toFixed(0) ){
@@ -155,13 +159,14 @@ class Lightningroutine extends Task {
       } else {
         lsting.consecutiveFailedCheckups = 0 // Not expired, so just reset counter.
       }
+      await lsting.save()
 
       Logger.debug("Failing "+ listing.id +" current consecutive failed checkups: " + lsting.consecutiveFailedCheckups)
       //console.table(listing)
       if(lsting.consecutiveFailedCheckups > 2){
         await this.markBuyerRedeemable(lsting.id, "Seller closed channel early")
       }
-      await lsting.save()
+      
     }
     await this.findExpiredMessages()
   }
