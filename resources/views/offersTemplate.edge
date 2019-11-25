@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="background-image: url('/img/white-waves.png'); background-repeat: round;">
+<html lang="en" style="background-image: url('/img/2.jpg'); background-repeat: round;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +7,13 @@
     {{ style('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css') }}
     {{ style('https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.css') }}
     <script>
+    var totalbgCount = 18;
+    function changeBackground() 
+    {
+        var num = Math.ceil( Math.random() * totalbgCount );
+        document.body.background = 'img/'+num+'.jpg';
+        document.body.style.backgroundRepeat = "round";// Background repeat
+    }
     function updateURLParameter(url, param, paramVal){
         var TheAnchor = null;
         var newAdditionalURL = "";
@@ -36,7 +43,7 @@
         }
         else
         {
-            var tmpAnchor = baseURL.split("#");
+            var tmpAnchor = baseURL.onsplit("#");
             var TheParams = tmpAnchor[0];
             TheAnchor  = tmpAnchor[1];
 
@@ -57,12 +64,15 @@
         }
     </script>
 </head>
-<body>
+<body><!-- onload="changeBackground()"> -->
     @!component('components.navbar', auth = auth)
-    <section class="section">
-        <div class="container is-block">
-            @!section('content')
-        </div>
-    </section>
+    <div style="display: flex; flex-direction: column; min-height: 100vh;">
+        <section class="section">
+            <div class="container is-block">
+                @!section('content')
+            </div>
+        </section>
+        <div style="flex-grow: 1;"></div>
+    </div>
 </body>
 </html>

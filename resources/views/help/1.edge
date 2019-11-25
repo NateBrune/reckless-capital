@@ -1,0 +1,51 @@
+@layout('offersTemplate')
+
+@section('content')
+<div class="columns">
+  <div class="column is-two-thirds">
+    <div class="card">
+      <div class="card-content">
+        <h1 align="center" class="title">Offers</h1>
+        <h2 align="center" class="subtitle">for liquidity</h2>
+        <p>Participants in the Lightning Network may join this website and post an offer advertising their willingness to open a channel and specifying precicely 
+          how much Bitcoin they have on offer. In order to post a new offer you must specify a Lightning Address, a Liquidity, and a Stipend </p>
+        <br>
+        <h5 align="center" class="title is-5">Lightning Address</h5>
+        <p>Lightning Address refers to the public key of the Lightning Node combined with the IP Address and Port used to directly connect. 
+          A Port must be forwarded on each Lightning Node wishes to use the website so that Lightning Network participants can connect directly. A Lightning address looks like the following:</p>
+        <article class="message">
+          <div class="message-body">
+            <p>03baa70886d9200bf0ffbd3f9e18d18108331c858456b16e3a9f41e735c6208fef@92.22.77.1:9735</p>
+          </div>
+        </article>
+        <br>
+        <h5 align="center" class="title is-5"> Liquidity </h5>
+        <p>Liquidity refers to the amount of Bitcoins one is willing to open a channel with. The current largest possible channel in the Lightning Network is 0.16777216 Bitcoin.
+        <br>
+        <h5 align="center" class="title is-5">Stipend</h5>
+        <p>The Stipend is paid to the seller of the lightning channel. The Stipend used to pay for transaction fees associated with withdrawling Bitcoins. In addition, Reckless Capital charges (~0.5%) in addition to the Fee to the buyer. This is called the Service Fee and is used to develop the Reckless Capital platform.</p>
+        <br>
+        <h5 align="center" class="title is-5">Period</h5>
+        <p>The period is the amount of time the seller is willing to keep the channel open for. The lightning channel purchased by the buyer must remain open for the entirety of the period. Reckless Capital allows for a momentary gace-period in case of unexpected disruptions resulting in the closure of a channel. If the channel is still closed after grace period has elapsed the transaction becomes buyer redeemable.</p>
+      </div>
+    </div>
+  </div>
+  <div class="column is-one-third">
+    <div class="box">
+      <aside class="menu">
+          <p class="menu-label">
+            Help
+          </p>
+          <ul class="menu-list">
+            <li><a href="/help/0">Introduction</a></li>
+            <li><a class="is-active">Offers</a></li>
+            <li><a href="/help/2">Reputation</a></li>
+            <li><a href="/help/3">Login Credentials</a></li>
+            <li><a href="/help/4">Trustless Escrow</a></li>
+            <li><a href="/help/5">Buying Offers</a></li>
+          </ul>
+        </aside>
+      </div>
+  </div>
+</div>
+@endsection

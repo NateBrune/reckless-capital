@@ -1,0 +1,39 @@
+@layout('offersTemplate')
+
+@section('content')
+<div class="columns">
+  <div class="column is-two-thirds">
+    <div class="card">
+      <div class="card-content">
+        <h1 align="center" class="title">Reputation</h1>
+        <h2 align="center" class="subtitle">Market participant information</h2>
+        <p>All channel vendors and buyers maintain a reputation. All transactions result in increasing or decreasing both the buyer and seller's reputations. This reputation is comprised of two numbers: Number of transactions with favorable outcomes and Number of transactions with an unfavorable outcome. The intention is that before any transaction occurs buyers and sellers can view eachothers history and decide if they're willing to do business with the indiviual in question.</p>
+        <br>
+        <h5 align="center" class="title is-5"> + Favorable outcome </h5>
+        <p>The favorable outcome is any time a channel between buyer and seller with the appropriate quantity of Bitcoin is opened, and remains open for the appropriate period of time. </p>
+        <br>
+        <h5 align="center" class="title is-5"> - Unfavorable outcome </h5>
+        <p>The unfavorable outcome occurs any time the conditions of an offer aren't met. Often this means that either the offer was accepted but the channel was never opened or the channel was opened but was closed prematurely. The Buyer can also unexpectedly close the channel before the end of the period. </p>
+        <br>
+      </div>
+    </div>
+  </div>
+  <div class="column is-one-third">
+    <div class="box">
+      <aside class="menu">
+          <p class="menu-label">
+            Help
+          </p>
+          <ul class="menu-list">
+            <li><a href="/help/0">Introduction</a></li>
+            <li><a href="/help/1">Offers</a></li>
+            <li><a class="is-active">Reputation</a></li>
+            <li><a href="/help/3">Login Credentials</a></li>
+            <li><a href="/help/4">Trustless Escrow</a></li>
+            <li><a href="/help/5">Buying Offers</a></li>
+          </ul>
+        </aside>
+      </div>
+  </div>
+</div>
+@endsection

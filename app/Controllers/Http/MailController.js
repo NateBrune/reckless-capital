@@ -97,9 +97,9 @@ class MailController {
     }
     var messages = undefined
     if(sortBy == "buyer"){
-      messages = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 2)
+      messages = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
     } else if(sortBy == "seller") {
-      messages = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 2)
+      messages = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
     } else {
       
     }

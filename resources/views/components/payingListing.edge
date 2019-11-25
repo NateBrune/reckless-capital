@@ -22,7 +22,7 @@
             <div class="box">
               <article class="media">
                 <div class="media-content">
-                  @if(message.message != "sellerRedeemable")
+                  @if(message.message != "sellerRedeemable" && message.message != "channelOpen")
                     <div class="is-pulled-right">
                       <i class="fas fa-exclamation-triangle"></i>
                     </div>
@@ -47,7 +47,7 @@
                     </p>
                   @elseif(message.message == "channelOpen")
                     <p>
-                      Everything looks good from here.
+                      Murphy's laws: 
                       <p id="{{ 'satoshiquote-'+message.aboutListing }}"></p>
                     </p>
                     <script>getQuote("{{ 'satoshiquote-'+message.aboutListing }}")</script>

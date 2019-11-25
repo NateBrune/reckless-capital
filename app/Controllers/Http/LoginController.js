@@ -19,6 +19,7 @@ class LoginController {
   async index ({ view }) {
     return view.render('login.index')
   }
+  
   async signup ({ view }) {
     return view.render('login.signup')
   }

@@ -53,7 +53,7 @@ function lastPage(page){
     </div> <!-- columns -->
   </div> <!-- card content -->
 </div> <!-- card -->
-
+<br>
 <div class="box">
   <form action="sendMsg" method="POST">
       {{ csrfField() }}
@@ -71,7 +71,7 @@ function lastPage(page){
         <label class="label"> Message Text </label>
         <div class="field">
           <div class="control">
-            <textarea class="textarea is-primary" name="message" value="{{ old('message', '') }}" placeholder="I have a great new idea for you!"></textarea>
+            <textarea class="textarea" name="message" value="{{ old('message', '') }}" placeholder="I have a great new idea for you!"></textarea>
           </div>
         </div>
         <div class="control">
