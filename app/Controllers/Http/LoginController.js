@@ -9,6 +9,7 @@ const Logger = use('Logger')
 
 //const bitcoin = require('bitcoinjs-lib')
 var bitcoinMessage = require('bitcoinjs-message')
+var validateAddress = require('bitcoin-address-validation');
 
 class LoginController {
 
@@ -54,12 +55,20 @@ class LoginController {
         const usernameCount = await User.query().where('username', request.input('username')).count()
         const total = usernameCount[0]['count(*)']
         if(total > 0){
-          session.flash({ notification: 'Username taken'})
+          session
+          .withErrors([{ field: 'notification', message: 'Username taken.' }])
+          .flashAll()
           return response.redirect('back')
         }
       } catch(error){
         console.log(error) 
       }
+    }
+    if(!validateAddress(request.input('refundAddress'))){
+      session
+      .withErrors([{ field: 'notification', message: 'Invalid Bitcoin Address.' }])
+      .flashAll()
+      return response.redirect('back')
     }
     const elite = await auth.getUser()
     elite.username = request.input('username')

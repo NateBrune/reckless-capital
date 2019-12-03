@@ -20,6 +20,14 @@
   
   setTimeout(setFields, 750);
   </script>
+
+  @if(old('notification'))
+    <div class="notification is-success">
+        {{ old('notification') }}
+    </div>
+  @endif
+  {{ elIf('<div class="notification is-danger">$self</div>', getErrorFor('notification'), hasErrorFor('notification')) }}
+
   <div class="box">
     <h2 class="title">Settings</h2>
 
@@ -113,10 +121,4 @@
       </p>
     </div>
   </div>
-
-  @if(old('notification'))
-    <div class="notification is-success">
-        {{ old('notification') }}
-    </div>
-  @endif
 @endsection

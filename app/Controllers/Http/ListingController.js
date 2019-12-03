@@ -100,13 +100,6 @@ class ListingController {
       return response.redirect('back')
     }
 
-    /*try{
-      await this.wallet.unlockLndWallet()
-    } catch (e){
-      console.log('error in store: ')
-      console.log(e)
-    }*/
-
     // persist to database
     const elite = await auth.getUser()
     const listing = new Listing()
@@ -116,6 +109,13 @@ class ListingController {
     if(!connected){
       session
       .withErrors([{ field: 'notification', message: 'Could not connect to peer. Check lightning address and verify your node is reachable by visiting https://1ml.com.' }])
+      .flashAll()
+      return response.redirect('back')
+    }
+    
+    if(!elite.refundAddress){
+      session
+      .withErrors([{ field: 'notification', message: 'Please change your Payment Address in settings' }])
       .flashAll()
       return response.redirect('back')
     }
