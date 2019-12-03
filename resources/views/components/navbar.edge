@@ -129,7 +129,7 @@
       </div>
       <div class="navbar-item">
         <a class="button is-light" href="/settings">
-          <img class="is-rounded" style="object-fit:cover; border-radius:50%;" src="{{ auth.user.picture }}" alt="img/profile.png"></img>
+        <img id="navbarprofile" class="is-rounded" style="object-fit:cover; border-radius:50%;" src="{{ auth.user.picture }}" onerror="loadAltImage('navbarprofile')"></img>
         </a>
       </div>
       <div class="navbar-item">

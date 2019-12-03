@@ -10,29 +10,34 @@ const Message = use('App/Models/Message')
 const User = use('App/Models/User')
 
 const serverWif = Env.get('SERVER_WIF')
-const HOST = Env.get('BTCD_HOST')
-const PORT = Env.get('BTCD_PORT')
-const PASS = Env.get('LND_PASS')
+const BTCD_HOST = Env.get('BTCD_HOST')
+const BTCD_PORT = Env.get('BTCD_PORT')
+const BTCD_USERNAME = Env.get('BTCD_USERNAME')
+const BTCD_PASSWORD = Env.get('BTCD_PASSWORD')
+const LND_HOST = Env.get('LND_HOST')
+const LND_CERT = Env.get('LND_CERT')
+const LND_MACAROON = Env.get('LND_MACAROON')
 const SERVERADDRESS = Env.get('SERVER_ADDRESS')
 const TESTNET = bitcoin.networks.testnet
+
 const client = new Client({
-  network: 'regtest',
-  host: HOST,
+  network: 'testnet',
+  host: BTCD_HOST,
   //port: 8332,
-  port: PORT,
-  username: 'lnd',
-  password: 'lightning',
+  port: BTCD_PORT,
+  username: BTCD_USERNAME,
+  password: BTCD_PASSWORD,
   version: '0.18.1'
 });
 
 //client.set('user', 'bitcoinrpc')
 
 // bitcoin = require('../..')
-const APIPASS = process.env.APIPASS || 'satoshi'
-const APIURL = process.env.APIURL || 'https://regtest.bitbank.cc/1'
+//const APIPASS = process.env.APIPASS || 'satoshi'
+//const APIURL = process.env.APIURL || 'https://regtest.bitbank.cc/1'
 
-const regtestUtils = new RegtestUtils(bitcoin, { APIPASS, APIURL })
-const regtest = regtestUtils.network;
+//const regtestUtils = new RegtestUtils(bitcoin, { APIPASS, APIURL })
+//const regtest = regtestUtils.network;
 
 class BtcWalletController {
   constructor(){
@@ -42,9 +47,9 @@ class BtcWalletController {
   async connectToLnd(){
     if(this.grpc === null){
       this.grpc = new LndGrpc({
-        host: 'localhost:10009',
-        cert: '~/app-container/.lnd/tls.cert',
-        macaroon: '~/app-container/.lnd/data/chain/bitcoin/regtest/admin.macaroon',
+        host: LND_HOST,
+        cert: LND_CERT,
+        macaroon: LND_MACAROON,
       })
 
       await this.grpc.connect()
@@ -91,17 +96,17 @@ class BtcWalletController {
       console.log(info)
       return true
     } catch(e){
-      if(e.message.includes('already connected to peer') || e.message.includes('cannot make connection to self')){
+      if(e.message.includes('already connected to peer')){ //|| e.message.includes('cannot make connection to self')){
         return true
       } else {
         return false
       }
     }
     
-    console.log("connectpeer: " + info)
+    console.log("connectPeer: " + info)
   }
 
-  derriveServerKeyPair(id){
+  deriveServerKeyPair(id){
     if(id == null) { except("id cannot be null!")}
 
     var hash = null
@@ -114,7 +119,7 @@ class BtcWalletController {
   }
 
   appendP2WSHtoListing(listing, eliteBuyerPubKey, eliteSellerPubKey) {
-    const serverKeyPair = this.derriveServerKeyPair(listing.id)
+    const serverKeyPair = this.deriveServerKeyPair(listing.id)
     
     // Generate a P2WSH ( Pay-to-Multisig 2-of-3 )
     var redeemscript = null
@@ -123,12 +128,12 @@ class BtcWalletController {
       eliteBuyerPubKey,
       eliteSellerPubKey
     ].map((hex) => Buffer.from(hex, 'hex'))
-    //redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: TESTNET })
-    redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: bitcoin.networks.regtest })
+    //redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: bitcoin.networks.regtest })
+    redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: TESTNET })
     var p2wshTx = bitcoin.payments.p2wsh({
       redeem: redeemscript,
-      network: bitcoin.networks.regtest
-      //network: TESTNET
+      //network: bitcoin.networks.regtest
+      network: TESTNET
     })
     //console.log(p2wshTx)
     //console.log("output: " + p2wshTx.output.toString('hex'))
@@ -146,8 +151,8 @@ class BtcWalletController {
 
   derriveAddressFromPublicKey(pubkey){
     const publicKeyBuffer = Buffer.from(pubkey, "hex")
-    //const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: TESTNET })
-    const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: regtest })
+    const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: TESTNET })
+    //const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: regtest })
     return address
   }
 
@@ -218,8 +223,9 @@ class BtcWalletController {
     console.log("looking up listing: "+ id)
     var listing = await Listing.find(id)
     if(listing == null ) { return new Error("Invalid listing id specified. Couldn't find listing.")}
-    const serverKeyPair = this.derriveServerKeyPair(id)
-    const psbt = new bitcoin.Psbt({ network: regtest })
+    const serverKeyPair = this.deriveServerKeyPair(id)
+    //const psbt = new bitcoin.Psbt({ network: regtest })
+    const psbt = new bitcoin.Psbt({ network: TESTNET })
     psbt.setVersion(2); // These are defaults. This line is not needed.
     psbt.setLocktime(0); // These are defaults. This line is not needed.
     console.log("input value: " + listing.fundingTransactionAmount)

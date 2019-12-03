@@ -3,7 +3,7 @@
       <div class="media">
         <div class="media-left">
           <figure class="image is-48x48">
-            <img class="is-rounded" src="{{ message.receiverPicture }}" alt="img/profile.png">
+          <img id="{{ 'receiverPic-'+message.aboutListing }}" class="is-rounded" src="{{ message.receiverPicture }}" onerror="loadAltProfile('{{ 'receiverPic-'+message.aboutListing }}')">
           </figure>
         </div>
         <div class="media-content">
