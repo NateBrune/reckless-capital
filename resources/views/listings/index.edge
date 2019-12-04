@@ -177,12 +177,12 @@
       </div>
       <div class="content">
           <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a> <small> is selling </small> <strong>{{ listing.hasLSAT }} BTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
-          <p id="{{ 'totalfee2-'+listing.id }}"></p>
+          <a id="{{ 'totalfee2-'+listing.id }}"></a>
           <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
         <script>
           var selpubkey = "{{ listing.sellerNodePublicKey }}"
           var link = document.getElementById("{{ 'href-' + listing.id }}")
-          link.setAttribute("href", 'https://1ml.com/node/' + selpubkey.split('@')[0])
+          link.setAttribute("href", 'https://1ml.com/testnet/node/' + selpubkey.split('@')[0])
           document.getElementById("{{ 'totalfee2-'+listing.id }}").innerHTML = "Fee is <strong> " + safeAdd({{ listing.stipend }}, {{ listing.servicefee }}) + " BTC</strong>"
         </script>
       </div>
