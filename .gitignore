@@ -15,5 +15,8 @@ database/development.sqlite
 .history
 .idea
 
+# Testing database
+database/adonis.sqlite
+
 .*
 !/.gitignore
