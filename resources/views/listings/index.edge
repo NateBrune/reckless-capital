@@ -147,7 +147,8 @@
                       </div>
                     </div>
                     <br>
-                    <strong><p> The next page will prompt you to fund the above transaction by sending {{ listing.servicefee + listing.stipend }} BTC to a provided Bitcoin address </p></strong>
+                    <strong><p id="{{ 'totalfee3-'+listing.id }}"></p></strong>
+                    <script> document.getElementById("{{ 'totalfee-'+listing.id }}").innerHTML = "The next page will prompt you to fund the above transaction by sending " + safeAdd({{ listing.servicefee }}, {{ listing.stipend }}) + " BTC to a provided Bitcoin address"</script>
                     <br>
                     <h1> Final Deal </h1>
                     <br>
@@ -155,7 +156,7 @@
                     <p> The seller fee will be {{ (listing.stipend).toFixed(8) }} BTC </p>
                     <p> The service fee will be {{ (listing.servicefee).toFixed(8) }} BTC  (0.5%)</p>
                     <p id="{{ 'totalfee-'+listing.id }}"></p>
-                    <script> document.getElementById("{{ 'totalfee-'+listing.id }}").innerHTML = "The Total fee will be " + safeAdd({{ listing.servicefee }}, {{ listing.stipend }}) + " BTC"</script>
+                    <script> document.getElementById("{{ 'totalfee-'+listing.id }}").innerHTML = "The total fee will be " + safeAdd({{ listing.servicefee }}, {{ listing.stipend }}) + " BTC"</script>
                     <p> Then channel will be open for {{ listing.sellerPeriod }} days. </p>
                     <p> If above conditions are not met the transaction will be terminated and funds will be immediately redeemable by you.</p>
                     
@@ -178,15 +179,13 @@
         <p>
           <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a> <small> is selling </small> <strong>{{ listing.hasLSAT }} BTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
           <br>
-          
           <p id="{{ 'totalfee2-'+listing.id }}"></p>
-          <script> document.getElementById("{{ 'totalfee2-'+listing.id }}").innerHTML = "Fee is <strong> " + safeAdd({{ listing.stipend }}, {{ listing.servicefee }}) + " BTC</strong>" </script>
-          <br>
-        <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
+          <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
         <script>
           var selpubkey = "{{ listing.sellerNodePublicKey }}"
           var link = document.getElementById("{{ 'href-' + listing.id }}")
           link.setAttribute("href", 'https://1ml.com/node/' + selpubkey.split('@')[0])
+          document.getElementById("{{ 'totalfee2-'+listing.id }}").innerHTML = "Fee is <strong> " + safeAdd({{ listing.stipend }}, {{ listing.servicefee }}) + " BTC</strong>"
         </script>
         </p>
       </div>
