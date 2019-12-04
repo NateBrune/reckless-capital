@@ -64,7 +64,7 @@ class LoginController {
         console.log(error) 
       }
     }
-    if(!validateAddress(request.input('refundAddress'))){
+    if(request.input('refundAddress') && !validateAddress(request.input('refundAddress'))){
       session
       .withErrors([{ field: 'notification', message: 'Invalid Bitcoin Address.' }])
       .flashAll()
@@ -219,6 +219,14 @@ class LoginController {
       .flashAll()
       return response.redirect('/login')
     }
+
+    if(request.input('refund') && !validateAddress(request.input('refund'))){
+      session
+      .withErrors([{ field: 'notification', message: 'Invalid Bitcoin Address.' }])
+      .flashAll()
+      return response.redirect('back')
+    }
+
     try{
       var result = bitcoinMessage.verify(challenge.challenge.toString(), this.wallet.derriveAddressFromPublicKey(elitePublicKey), eliteSignature)
       if(result){
