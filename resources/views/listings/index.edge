@@ -177,7 +177,7 @@
       </div>
       <div class="content">
           <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a> <small> is selling </small> <strong>{{ listing.hasLSAT }} BTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
-          <a id="{{ 'totalfee2-'+listing.id }}"></a>
+          <p id="{{ 'totalfee2-'+listing.id }}"></p>
           <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
         <script>
           var selpubkey = "{{ listing.sellerNodePublicKey }}"
