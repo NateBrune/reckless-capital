@@ -16,7 +16,7 @@
 /** @type {typeof import('@adonisjs/framework/src/Route/Manager')} */
 const Route = use('Route')
 
-Route.get('/', 'ListingController.index')
+Route.get('/listings', 'ListingController.index')
 Route.get('new', 'ListingController.new').middleware('auth')
 Route.post('listLSAT', 'ListingController.store').middleware('auth')
 Route.delete('listings/:id', 'ListingController.destroy').middleware('auth')
@@ -42,3 +42,4 @@ Route.get('withdrawFrom/:id', 'ListingController.withdrawFrom').middleware('auth
 Route.get('profile/:key', 'LoginController.viewProfile')
 Route.get('help/:page', 'HelpController.index')
 Route.get('help', 'HelpController.index')
+Route.get('/', 'HelpController.index')
