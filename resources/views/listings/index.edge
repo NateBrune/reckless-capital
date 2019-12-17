@@ -150,8 +150,7 @@
                     <strong><p id="{{ 'totalfee3-'+listing.id }}"></p></strong>
                     <script> document.getElementById("{{ 'totalfee3-'+listing.id }}").innerHTML = "The next page will prompt you to fund the above transaction by sending " + safeAdd({{ listing.servicefee }}, {{ listing.stipend }}) + " BTC to a provided Bitcoin address"</script>
                     <br>
-                    <h1> Final Deal </h1>
-                    <br>
+                    <b> Final Deal </b>
                     <p> Buying {{ (listing.hasLSAT).toFixed(8) }} BTC of capacity from {{ listing.username }}.</p>
                     <p> The seller fee will be {{ (listing.stipend).toFixed(8) }} BTC </p>
                     <p> The service fee will be {{ (listing.servicefee).toFixed(8) }} BTC  (0.5%)</p>
