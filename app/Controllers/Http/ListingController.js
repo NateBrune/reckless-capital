@@ -92,13 +92,6 @@ class ListingController {
       stipend: 'required|range:0.0000075,10.0',
       period: 'required|range:0,91',
     })
-  
-    // show error messages upon validation fail
-    if (validation.fails()) {
-      session.withErrors(validation.messages())
-              .flashAll()
-      return response.redirect('back')
-    }
 
     // persist to database
     const elite = await auth.getUser()

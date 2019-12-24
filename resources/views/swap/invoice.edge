@@ -1,0 +1,38 @@
+@layout('master')
+
+@section('content')
+@if(!swap)
+<div class="box">
+  <center>Invoice not found!</center>
+</div>
+@elseif(!swap.paid)
+{{ script('js/qrcode.js') }}
+<div class="box">
+  <h1 align="center" class="title">Please pay the following lightning invoice.</h1>
+  </h1>
+  <br />
+  <center><div id="invoiceQRCode"></div></center>
+  <br />
+  <div class="notification is-light">
+    <h1 align="center" class="subtitle">{{ swap.invoice }}</h1>
+  </div>
+  <div class="notification is-info">
+      <h1 align="center" class="subtitle"> Total service fee: {{ quote }} Satoshis</h1>
+  </div>
+</div>
+@else
+<div class="box">
+  <h1 align="center" class="title">Payment recieved! Your Bitcoins should be arive within 30 minutes. Thank you.</h1>
+</div>
+@endif
+
+<script>
+  var qrcode = new QRCode(document.getElementById("invoiceQRCode"), {
+    width : 256,
+    height : 256
+  });
+  
+  qrcode.makeCode("{{ swap.invoice }}")
+  </script>
+
+@endsection

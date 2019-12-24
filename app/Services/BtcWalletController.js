@@ -3,6 +3,7 @@ const bitcoin = require('bitcoinjs-lib')
 const { RegtestUtils } = require('regtest-client')
 const Client = require('bitcoin-core')
 const LndGrpc = require('lnd-grpc')
+const Logger = use('Logger')
 var Env = use('Env')
 
 const Listing = use('App/Models/Listing')
@@ -84,26 +85,55 @@ class BtcWalletController {
     } catch(e){ 
       throw e
     }
-    
-    
   }
 
   async connectPeerLND(lnaddress){
     const { Lightning } = this.grpc.services
-    //console.log(Lightning)
     try{
       var info = await Lightning.connectPeer({addr: {pubkey: lnaddress.split('@')[0], host:  lnaddress.split('@')[1]}})
       console.log(info)
       return true
     } catch(e){
-      if(e.message.includes('already connected to peer')){ //|| e.message.includes('cannot make connection to self')){
+      if(e.message.includes('already connected to peer') || e.message.includes('cannot make connection to self')){
         return true
       } else {
         return false
       }
     }
-    
-    console.log("connectPeer: " + info)
+  }
+
+  async addInvoice(satoshis){
+    return await this.grpc.services.Lightning.addInvoice({ value: 100 })
+  }
+
+  async resolveOnInvoice(){
+    var call = this.grpc.services.Lightning.subscribeInvoices()
+
+    const promise = new Promise(async resolve => {
+      call.on('error', function(error) {
+        t.equal(error.code, status.CANCELLED, 'call.cancel() should cancel an invoice subscription stream')
+        if (error.code === status.CANCELLED) {
+          return resolve()
+        }
+      })
+      call.on('data', function(response) {
+        // A response was received from the server.
+        Logger.info("data:")
+        Logger.info(response)
+        resolve(response)
+      });
+      call.on('status', function(status) {
+        // The current status of the stream.
+        Logger.info("status:")
+        Logger.info(status)
+        resolve(status)
+      });
+      call.on('end', function() {
+        // The server has closed the stream.
+        resolve()
+      });
+    })
+    return await promise
   }
 
   deriveServerKeyPair(id){
@@ -121,13 +151,16 @@ class BtcWalletController {
   appendP2WSHtoListing(listing, eliteBuyerPubKey, eliteSellerPubKey) {
     const serverKeyPair = this.deriveServerKeyPair(listing.id)
     
-    // Generate a P2WSH ( Pay-to-Multisig 2-of-3 )
+    /* Generate a P2WSH ( Pay-to-Multisig 2-of-3 )
+      Keys involved are the server, buyer, and seller's respective keys. */
     var redeemscript = null
     var pubkeys = [
       serverKeyPair.publicKey.toString('hex'),
       eliteBuyerPubKey,
       eliteSellerPubKey
     ].map((hex) => Buffer.from(hex, 'hex'))
+
+
     //redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: bitcoin.networks.regtest })
     redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: TESTNET })
     var p2wshTx = bitcoin.payments.p2wsh({
@@ -135,15 +168,10 @@ class BtcWalletController {
       //network: bitcoin.networks.regtest
       network: TESTNET
     })
-    //console.log(p2wshTx)
-    //console.log("output: " + p2wshTx.output.toString('hex'))
-    //console.log("redeem.output: " + p2wshTx.redeem.output.toString('hex'))
-    //console.log("witness: " + p2wshTx.witness)
     listing.output = p2wshTx.output.toString('hex')
     listing.redeemscript = p2wshTx.redeem.output.toString('hex')
     listing.fundingAddress = p2wshTx.address
     listing.pendingAccept = true
-    //client.importAddress(p2wshTx.address, 'false')
     client.importAddress({address: p2wshTx.address, rescan: false})
     return p2wshTx
     
@@ -156,13 +184,16 @@ class BtcWalletController {
     return address
   }
 
-  /* Inheritence broken, function copy-pasted from another class */
+  /* Inheritence broken, function copy-pasted from Stack Overflow Answer */
   async asyncForEach(array, callback) {
     for (let index = 0; index < array.length; index++) {
       await callback(array[index], index, array);
     }
   }
 
+  /* Bitcoind will trigger this function and give it a transaction id. The transaction is first sent once it's in the mempool. 
+  It's triggered again once the transaction is confirmed in one block. */
+  
   async walletNotify(txid){
     try{
         const transaction = await client.getTransaction(txid, true);
@@ -190,6 +221,7 @@ class BtcWalletController {
                 listing.funded = true
                 listing.fundingTransactionHash = txid
                 listing.fundingTransactionVout = detail['vout']
+                // I wish javascript had macros....
                 listing.fundingTransactionAmount = Math.round(new Number(detail['amount']) * 100000000)
                 var totalSats = Math.round(new Number(detail['amount']) * 100000000)
                 var extra = totalSats - Math.round(new Number(listing.stipend) * 100000000) - Math.round(new Number(listing.servicefee) * 100000000 ) 
@@ -210,8 +242,6 @@ class BtcWalletController {
                 console.log(detail['amount']*100000000 + " satoshis lost just like that... (incorrect quantity)")
                 return
             }
-
-            return new Error("should never reach here PLS NO REACH")
           }
         })
     } catch (e){
@@ -340,8 +370,6 @@ class BtcWalletController {
 
   async broadcastTx(hexTx){
     const tx = bitcoin.Psbt.fromHex(hexTx)
-    console.log('tx sigs valid: ' + tx.validateSignaturesOfAllInputs())
-    console.log("and now for what you've all been waiting for: ")
     try{
       tx.finalizeAllInputs()
       console.log("tx is valid >:)")

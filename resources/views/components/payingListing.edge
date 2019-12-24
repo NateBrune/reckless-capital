@@ -142,7 +142,11 @@
             </div>
           @elseif(message.message == "sellerRedeemable")
             <div class="notification is-light">
-              <center>Complete!</center>
+              <center>Complete.</center>
+            </div>
+          @elseif(message.message == "accepted")
+            <div class="notification is-light">
+              <center>Accepted.</center>
             </div>
           @else
             <div class="notification is-danger">
