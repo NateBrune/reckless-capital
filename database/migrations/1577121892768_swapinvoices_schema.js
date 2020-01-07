@@ -10,6 +10,7 @@ class SwapinvoicesSchema extends Schema {
       table.string('invoice', 128).notNullable()
       table.string('returnAddress', 64).notNullable()
       table.integer('addIndex').notNullable()
+      table.string('r_hash', 32).notNullable()
       table.integer('satoshis').notNullable()
       table.boolean('paid').notNullable()
       

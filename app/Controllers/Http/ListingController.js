@@ -8,7 +8,7 @@ const Logger = use('Logger')
 const BtcWalletController = use('App/Services/BtcWalletController')
 var Env = use('Env')
 
-const SERVICE_FEE = Env.get('SERVICE_FEE')
+const SERVICE_FEE = Env.get('EXCHANGE_SERVICE_FEE')
 
 class ListingController {
   constructor (){

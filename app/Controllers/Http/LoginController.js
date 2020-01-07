@@ -134,7 +134,7 @@ class LoginController {
 
     // end of validation 
     //console.log()
-    Logger.debug("challenge for: "+ this.wallet.derriveAddressFromPublicKey(elitePublicKey))
+    Logger.debug("challenge for: "+ this.wallet.deriveAddressFromPublicKey(elitePublicKey))
     //const elite = await User.query().where('publicKey', elitePublicKey).first()
     const challenge = this.generate(128)
     await Challenge.query().where('publicKey', elitePublicKey).delete()
@@ -145,7 +145,7 @@ class LoginController {
     await newChallenge.save()
     /*
     if(elite === null){
-      const eliteAddress = this.wallet.derriveAddressFromPublicKey(elitePublicKey)
+      const eliteAddress = this.wallet.deriveAddressFromPublicKey(elitePublicKey)
       const user = new User()
       user.username = null
       user.publicKey = elitePublicKey
@@ -228,13 +228,13 @@ class LoginController {
     }
 
     try{
-      var result = bitcoinMessage.verify(challenge.challenge.toString(), this.wallet.derriveAddressFromPublicKey(elitePublicKey), eliteSignature)
+      var result = bitcoinMessage.verify(challenge.challenge.toString(), this.wallet.deriveAddressFromPublicKey(elitePublicKey), eliteSignature)
       if(result){
         var elite = await User.query().where('publicKey', elitePublicKey).first()
         if(!elite){
           elite = new User()
           elite.publicKey = elitePublicKey
-          elite.address = this.wallet.derriveAddressFromPublicKey(elitePublicKey)
+          elite.address = this.wallet.deriveAddressFromPublicKey(elitePublicKey)
           elite.undisputedTxn = 0
           elite.disputedTxn = 0
           elite.hasMail = false
@@ -271,7 +271,7 @@ class LoginController {
       }
     } catch (e){
       Logger.notice(e)
-      throw Error(`Challenge: ${challenge.challenge} Generated address: ${this.wallet.derriveAddressFromPublicKey(elitePublicKey)}`) // Facts.
+      throw Error(`Challenge: ${challenge.challenge} Generated address: ${this.wallet.deriveAddressFromPublicKey(elitePublicKey)}`) // Facts.
     }
 
 
@@ -297,7 +297,7 @@ class LoginController {
       var result = false
       
       try{
-        result = bitcoinMessage.verify(elite.challenge.toString(), this.wallet.derriveAddressFromPublicKey(elitePublicKey).toLowerCase(), eliteSignature)
+        result = bitcoinMessage.verify(elite.challenge.toString(), this.wallet.deriveAddressFromPublicKey(elitePublicKey).toLowerCase(), eliteSignature)
       } catch (e){
         console.log("error: ")
         console.log(e)

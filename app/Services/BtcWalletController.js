@@ -9,6 +9,7 @@ var Env = use('Env')
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
 const User = use('App/Models/User')
+const Swapinvoice = use('App/Models/Swapinvoice')
 
 const serverWif = Env.get('SERVER_WIF')
 const BTCD_HOST = Env.get('BTCD_HOST')
@@ -102,12 +103,36 @@ class BtcWalletController {
     }
   }
 
+  async lookupInvoice(hash){
+    const { Lightning } = this.grpc.services
+    
+    //var hashb64 = invoiceBuffer.toString('base64')
+    //console.log(invoiceb64)
+    var request = {
+      r_hash: hash
+    }
+    var promise = new Promise((resolve, reject) => {
+      Lightning.lookupInvoice(request, function(err, response) {
+        if(err){
+          reject(err)
+        }
+        resolve(response)
+      })
+    })
+    return await promise
+  }
+
+
   async addInvoice(satoshis){
-    return await this.grpc.services.Lightning.addInvoice({ value: 100 })
+    const { Lightning } = this.grpc.services
+
+    return await Lightning.addInvoice({ value: satoshis })
   }
 
   async resolveOnInvoice(){
-    var call = this.grpc.services.Lightning.subscribeInvoices()
+    const { Lightning } = this.grpc.services
+    
+    var call = Lightning.subscribeInvoices()
 
     const promise = new Promise(async resolve => {
       call.on('error', function(error) {
@@ -177,14 +202,14 @@ class BtcWalletController {
     
   }
 
-  derriveAddressFromPublicKey(pubkey){
+  deriveAddressFromPublicKey(pubkey){
     const publicKeyBuffer = Buffer.from(pubkey, "hex")
     const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: TESTNET })
     //const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: regtest })
     return address
   }
 
-  /* Inheritence broken, function copy-pasted from Stack Overflow Answer */
+  /* Inheritance broken, function copy-pasted from Stack Overflow Answer */
   async asyncForEach(array, callback) {
     for (let index = 0; index < array.length; index++) {
       await callback(array[index], index, array);

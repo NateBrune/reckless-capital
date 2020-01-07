@@ -4,6 +4,7 @@ const { validate } = use('Validator')
 const BtcWalletController = use('App/Services/BtcWalletController')
 const Logger = use('Logger')
 const Swapinvoice = use('App/Models/Swapinvoice')
+var Env = use('Env')
 
 var validateAddress = require('bitcoin-address-validation');
 var grpc = require('grpc');
@@ -23,6 +24,7 @@ var packageDefinition = protoLoader.loadSync(
 var looprpc = grpc.loadPackageDefinition(packageDefinition).looprpc;
 
 
+
 class SwapController {
 
   constructor(){
@@ -32,6 +34,40 @@ class SwapController {
 
   async index ({ view, request }) {
     return view.render(`swap.index`)
+  }
+
+  async calculateTotalFees(requestedSats){
+    var maxMinerFee = Env.get('SWAP_MAX_MINER_FEE')
+    var maxPrepaymentAmt = Env.get('SWAP_MAX_PREPAY_AMT')
+    var maxSwapFee = Env.get('SWAP_MAX_SWAP_FEE')
+    var maxPrepayRoutingFee = maxPrepaymentAmt * Number(Env.get('SWAP_ROUTING_FEE_RATIO'))
+    var maxSwapRoutingFee = Number(requestedSats) * Number(Env.get('SWAP_ROUTING_FEE_RATIO'))
+
+    var request = { 
+      amt: requestedSats, 
+      conf_target: 3, 
+      external_htlc: false, 
+    }
+    var promise = new Promise((resolve, reject) => {
+      var swapClient = new looprpc.SwapClient('localhost:11010', grpc.credentials.createInsecure());
+      swapClient.loopOutQuote(request, function(err, response) {
+        if(err){
+          reject(Error(err))
+        }
+        resolve(response)
+      })
+    })
+    var result = await promise
+    var maxMinerFee = Env.get('SWAP_MAX_MINER_FEE')
+    var maxPrepaymentAmt = Env.get('SWAP_MAX_PREPAY_AMT')
+    var maxSwapFee = Env.get('SWAP_MAX_SWAP_FEE')
+    var totalServiceFees = Number(result["swap_fee"]) + Number(result["prepay_amt"]) + Number(result["miner_fee"])
+
+    var maxPrepayRoutingFee = maxPrepaymentAmt * Number(Env.get('SWAP_ROUTING_FEE_RATIO'))
+    var maxSwapRoutingFee = Number(requestedSats) * Number(Env.get('SWAP_ROUTING_FEE_RATIO'))
+
+    const total =  Math.round(totalServiceFees + maxPrepayRoutingFee + maxSwapRoutingFee + Number(Env.get('SWAP_BASE_FEE')))
+    return total
   }
 
   async requestSwapOut ({view, request, response, session }) {
@@ -58,22 +94,25 @@ class SwapController {
     await this.wallet.connectToLnd()
     await this.wallet.unlockLndWallet()
 
-    const requestedSats = request.input('liquidity')
+    const requestedSats =  Math.round((request.input('liquidity') * 100000000))
+    const totalInvoice = requestedSats + await this.calculateTotalFees(requestedSats)
 
-    var invoiceId = await this.wallet.addInvoice(requestedSats)
+    var invoiceId = await this.wallet.addInvoice(totalInvoice)
     const swapId = await this.createSwapRecord(invoiceId, returnAddress, requestedSats)
     var result = this.wallet.resolveOnInvoice()
     result.then(this.handleInvoiceStatus(result))
     return response.redirect('/swapstatus/' + swapId)
   }
+  
 
-  async createSwapRecord(invoice, address, amt){
+  async createSwapRecord(invoice, address, satoshis){
     const swap = new Swapinvoice()
-    //Logger.info(invoice['payment_request'])
+    console.log(invoice)
     swap.invoice = invoice['payment_request']
     swap.returnAddress = address
     swap.addIndex = invoice['add_index']
-    swap.satoshis = Math.round(amt*100000000)
+    swap.r_hash = invoice['r_hash']
+    swap.satoshis = satoshis
     swap.paid = false
     await swap.save()
     return swap.id
@@ -89,61 +128,69 @@ class SwapController {
     }
 
     if(result["state"] === "SETTLED"){
-      Logger.info(`Invoice Status: SETTLED`)
+      //Logger.info(`Invoice Status: SETTLED`)
       await Swapinvoice.query().where({'invoice': result['payment_request'], 'addIndex': result['add_index']}).update({
         paid: true
       })
-
-      var request = { 
-        amt: <int64>, 
-        dest: <string>, 
-        max_swap_routing_fee: <int64>, 
-        max_prepay_routing_fee: <int64>, 
-        max_swap_fee: <int64>, 
-        max_prepay_amt: <int64>, 
-        max_miner_fee: <int64>, 
-        loop_out_channel: <uint64>, 
-        sweep_conf_target: <int32>, 
-        swap_publication_deadline: <uint64>
-      }
-      
+      var swapRecord = await Swapinvoice.query().where({'invoice': result['payment_request'], 'addIndex': result['add_index']}).first()
+      //Logger.debug(`Found swap record: ${swapRecord.id}`)
+      console.log(swapRecord)
+      await this.initiateSwap(swapRecord.id) // Doesn't exist WILL IT INTO EXISTENCE NATE FUCK!  
     } else {
-      await Swapinvoice.query().where({'invoice': result['payment_request'], 'addIndex': result['add_index']}).delete() // This could very well be a bug! TODO
+      //Logger.crit(result)
+      //Logger.crit(`Unhandled invoice status!`)
+      //await Swapinvoice.query().where({'invoice': result['payment_request'], 'addIndex': result['add_index']}).delete() // This could very well be a bug! TODO
     }
     return
+  }
+
+  async initiateSwap(id){
+    var swapRecord = await Swapinvoice.find(id)
+
+    var maxMinerFee = Env.get('SWAP_MAX_MINER_FEE')
+    var maxPrepaymentAmt = Env.get('SWAP_MAX_PREPAY_AMT')
+    var maxSwapFee = Env.get('SWAP_MAX_SWAP_FEE')
+    var maxPrepayRoutingFee = maxPrepaymentAmt * Number(Env.get('SWAP_ROUTING_FEE_RATIO'))
+    var maxSwapRoutingFee = Number(swapRecord.satoshis) * Number(Env.get('SWAP_ROUTING_FEE_RATIO'))
+
+    var request = { 
+      amt: swapRecord.satoshis, 
+      dest: swapRecord.returnAddress, 
+      max_swap_routing_fee: maxSwapRoutingFee, 
+      max_prepay_routing_fee: maxPrepayRoutingFee, 
+      max_swap_fee: maxSwapFee, 
+      max_prepay_amt: maxPrepaymentAmt, 
+      max_miner_fee: maxMinerFee, 
+      loop_out_channel: null, 
+      sweep_conf_target: 3, 
+      swap_publication_deadline: this.addMinutes(Date.now(), 30).getTime() / 1000
+    }
+
+    this.swapClient.loopOut(request, function(err, response) {
+      Logger.info(response)
+    })
   }
 
   async swapStatus({view, request, response}){
     const swapId = request.url().split("/")[2]
     const swap = await Swapinvoice.find(swapId)
     if(!swap){
+      Logger.error(`Couldn't find swap ${swapId}`)
       return view.render(`swap.invoice`, {swap: null, quote: null})
     }
 
     if(swap.paid){
-      return view.render(`swap.invoice`, {swap: swap})
+      return view.render(`swap.invoice`, {swap: swap}) 
     }
 
-    var request = { 
-      amt: swap.satoshis, 
-      conf_target: 3, 
-      external_htlc: false, 
-    }
-    var promise = new Promise((resolve, reject) => {
-      var swapClient = new looprpc.SwapClient('localhost:11010', grpc.credentials.createInsecure());
-      swapClient.loopOutQuote(request, function(err, response) {
-        if(err){
-          reject(Error(err))
-        }
-        resolve(response)
-      })
-    })
-    var result = await promise
-    Logger.info(result)
-    //console.log(swap)
-    const total = Number(result["swap_fee"]) + Number(result["prepay_amt"]) + Number(result["miner_fee"])
-    return view.render(`swap.invoice`, {swap: swap, quote: total})
+    const total =  await this.calculateTotalFees(swap.satoshis)
+    return view.render(`swap.invoice`, {swap: swap, quote: total })
   }
+
+  addMinutes(date, minutes) {
+    return new Date(date + minutes*60000);
+  }
+
 }
 
 module.exports = SwapController

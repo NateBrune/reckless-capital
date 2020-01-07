@@ -11,7 +11,8 @@
   <h1 align="center" class="title">Please pay the following lightning invoice.</h1>
   </h1>
   <br />
-  <center><div id="invoiceQRCode"></div></center>
+  <img id="success" src="/img/success.png" style="display:none">
+  <center><canvas id="invoiceQRCode" width="300" height="300"></canvas></canvas></center>
   <br />
   <div class="notification is-light">
     <h1 align="center" class="subtitle">{{ swap.invoice }}</h1>
@@ -25,14 +26,50 @@
   <h1 align="center" class="title">Payment recieved! Your Bitcoins should be arive within 30 minutes. Thank you.</h1>
 </div>
 @endif
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <script>
-  var qrcode = new QRCode(document.getElementById("invoiceQRCode"), {
-    width : 256,
-    height : 256
-  });
-  
-  qrcode.makeCode("{{ swap.invoice }}")
+  function makeQR(id, value){
+    var qr = new QRious({
+      element: document.getElementById(id),
+      size: 300,
+      level: "H",
+      padding: 10,
+      value: invoice.toUpperCase()
+    })
+  }
+
+  function drawTick(canvasId) {
+    var c = document.getElementById(canvasId);
+    var ctx = c.getContext("2d");
+    var img = document.getElementById("success");
+    ctx.drawImage(img, 10, 10);
+  }
+
+  var invoice = "{{ swap.invoice }}"
+  makeQR('invoiceQRCode', invoice)
+
+  function timeout() {
+    setTimeout(function () {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open( "GET", '/v1/swapstatus/{{ swap.id }}', false ); // false for synchronous request
+      xmlHttp.send( null );
+      var response = JSON.parse(xmlHttp.responseText)
+      //console.log(response)
+      if(response){
+        console.log(response)
+        if(response['paid']){
+          drawTick('invoiceQRCode')
+          return
+        }
+      }
+      timeout()
+    }, 1500);
+  }
+  @if(!swap.paid)
+  timeout()
+  @endif
+
+  //qrcode.makeCode(invoice.toUpperCase())
   </script>
 
 @endsection
