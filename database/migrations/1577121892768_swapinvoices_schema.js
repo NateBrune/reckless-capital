@@ -13,6 +13,9 @@ class SwapinvoicesSchema extends Schema {
       table.string('r_hash', 32).notNullable()
       table.integer('satoshis').notNullable()
       table.boolean('paid').notNullable()
+      table.boolean('failed').notNullable()
+      table.string('swapid')
+      table.string('htlc_address')
       
       table.timestamps()
     })

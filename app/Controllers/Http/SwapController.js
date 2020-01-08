@@ -30,6 +30,19 @@ class SwapController {
   constructor(){
     this.wallet = new BtcWalletController()
     this.swapClient = new looprpc.SwapClient('localhost:11010', grpc.credentials.createInsecure());
+    var request = {}
+    var call = this.swapClient.monitor(request)
+    call.on('data', function(response) {
+      // A response was received from the server.
+      Logger.debug("update from swap server: ")
+      Logger.debug(response);
+    });
+    call.on('status', function(status) {
+      // The current status of the stream.
+    });
+    call.on('end', function() {
+      // The server has closed the stream.
+    });
   }
 
   async index ({ view, request }) {
@@ -97,7 +110,7 @@ class SwapController {
     const requestedSats =  Math.round((request.input('liquidity') * 100000000))
     const totalInvoice = requestedSats + await this.calculateTotalFees(requestedSats)
 
-    var invoiceId = await this.wallet.addInvoice(totalInvoice)
+    var invoiceId = await this.wallet.addInvoice(totalInvoice, `RC SWAP ${requestedSats} OFF ${returnAddress}`)
     const swapId = await this.createSwapRecord(invoiceId, returnAddress, requestedSats)
     var result = this.wallet.resolveOnInvoice()
     result.then(this.handleInvoiceStatus(result))
@@ -120,7 +133,6 @@ class SwapController {
 
   async handleInvoiceStatus(status){
     var result = await status
-    Logger.debug(result)
 
     if(!result){
       Logger.debug("Invoice status is null.")
@@ -135,7 +147,7 @@ class SwapController {
       var swapRecord = await Swapinvoice.query().where({'invoice': result['payment_request'], 'addIndex': result['add_index']}).first()
       //Logger.debug(`Found swap record: ${swapRecord.id}`)
       console.log(swapRecord)
-      await this.initiateSwap(swapRecord.id) // Doesn't exist WILL IT INTO EXISTENCE NATE FUCK!  
+      await this.initiateSwap(swapRecord.id)
     } else {
       //Logger.crit(result)
       //Logger.crit(`Unhandled invoice status!`)
@@ -166,8 +178,19 @@ class SwapController {
       swap_publication_deadline: this.addMinutes(Date.now(), 30).getTime() / 1000
     }
 
-    this.swapClient.loopOut(request, function(err, response) {
-      Logger.info(response)
+    this.swapClient.loopOut(request, function(err, response, swapRecord = swapRecord) {
+      if(err){
+        Logger.debug("swapserver response: ")
+        Logger.crit(response)
+        swapRecord.failed = true
+        swapRecord.save()
+      } else {
+        Logger.debug("swapserver response: ")
+        Logger.debug(response)
+        swapRecord.swapid = response['id']
+        swapRecord.htlc_address = response['htlc_address']
+        swapRecord.save()
+      }
     })
   }
 

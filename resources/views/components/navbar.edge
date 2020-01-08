@@ -24,40 +24,13 @@
           <i class="fab fa-bitcoin"></i> &nbsp; Sell Liquidity
         </a>
       @endloggedIn
+      <a class="navbar-item" href="/nodeinfo">
+        <i class="fas fa-project-diagram"></i> &nbsp; Node
+      </a>
       <a class="navbar-item" href="/help">
         <i class="fas fa-info-circle"></i> &nbsp; Help
       </a>
     </div>
-
-    <!--<div class="navbar-end">
-      @loggedIn
-        <a class="navbar-item" href="/messages"> Check Messages  
-          @if(auth.user.hasMail)
-            <i class="fas fa-envelope-open-text"></i>
-          @else
-            <i class="far fa-envelope"></i>
-          @endif
-        </a>
-        @if(auth.user.hasOffer)
-          <a class="navbar-item" href="/offers">Check Offers <i class="fas fa-folder-open"></i></a>
-        @else
-          <a class="navbar-item" href="/offers">Check Offers <i class="far fa-folder"></i></a>
-        @endif
-        <a class="navbar-item" href="/settings">
-          Settings
-        </a>
-        <a class="navbar-item" href="/logout">
-          Log out
-        </a>
-      @else
-        <a class="navbar-item" href="/signup">
-          Create new account
-        </a>
-        <a class="navbar-item" href="/login">
-          Log in
-        </a>
-      @endloggedIn
-    </div>-->
     <div class="navbar-end">
       @loggedIn
         <a class="navbar-item" href="/messages">

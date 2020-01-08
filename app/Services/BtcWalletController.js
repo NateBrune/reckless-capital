@@ -72,12 +72,6 @@ class BtcWalletController {
     */
   }
 
-  async getInfo(){
-    const { Lightning } = this.grpc.services
-    var info = await Lightning.getInfo()
-    console.log("getInfo: " + info)
-  }
-
   async getNodeInfo(pubkey){
     const { Lightning } = this.grpc.services
     try{
@@ -122,11 +116,30 @@ class BtcWalletController {
     return await promise
   }
 
-
-  async addInvoice(satoshis){
+  async getInfo(){
     const { Lightning } = this.grpc.services
+    console.log("getting info")
+    var promise = new Promise((resolve, reject) => {
+      Lightning.getInfo({}, function(err, response) {
+        if(err){
+          reject(err)
+        }
+        resolve(response)
+      })
+    })
+    return await promise
+  }
 
-    return await Lightning.addInvoice({ value: satoshis })
+
+
+  async addInvoice(satoshis, memo = null){
+    const { Lightning } = this.grpc.services
+    if(memo){
+      return await Lightning.addInvoice({ value: satoshis, memo: memo })
+    } else {
+      return await Lightning.addInvoice({ value: satoshis })
+    }
+    
   }
 
   async resolveOnInvoice(){
@@ -143,14 +156,10 @@ class BtcWalletController {
       })
       call.on('data', function(response) {
         // A response was received from the server.
-        Logger.info("data:")
-        Logger.info(response)
         resolve(response)
       });
       call.on('status', function(status) {
         // The current status of the stream.
-        Logger.info("status:")
-        Logger.info(status)
         resolve(status)
       });
       call.on('end', function() {

@@ -11,6 +11,11 @@ class HelpController {
       return view.render(`help.${page}`)
     }
   }
+
+  async nodeInfo ({ view, request }) {
+    return view.render(`help.nodeinfo`)
+ 
+  }
 }
 
 module.exports = HelpController

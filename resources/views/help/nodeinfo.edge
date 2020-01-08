@@ -1,0 +1,132 @@
+@layout('master')
+
+@section('content')
+<div class="box">
+  <div class="columns">
+    <div class="column is-two-thirds">
+      <article class="notification is-white">
+        <p class="title">Connect to us!</p>
+        <p class="subtitle" id="nodeuri"></subtitle>
+        <div class="content">
+          
+        </div>
+      </article>
+    </div>
+    <div class="column is-one-third">
+      <article class="notification is-white">
+        <center><canvas id="nodeqr" width="300" height="300"></canvas></center>
+      </article>
+    </div>
+  </div>
+  <div class="tile is-ancestor">
+    <div class="tile">
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-info">
+          <p class="title">Node Codename</p>
+          <p class="subtitle" id="alias"></p>
+        </article>
+      </div>
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-primary">
+          <p class="title">Bitcoin Network</p>
+          <p class="subtitle" id="network"></p>
+        </article>
+      </div>
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-link">
+          <p class="title">Version</p>
+          <p class="subtitle" id="version"></p>
+        </article>
+      </div>
+    </div>
+  </div>
+  <div class="tile is-ancestor">
+    <div class="tile">
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-warning">
+          <p class="title">Open Channels</p>
+          <p class="subtitle" id="openchannels"></p>
+        </article>
+      </div>
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-dark">
+          <p class="title">Closed Channels</p>
+          <p class="subtitle" id="closedchannels"></p>
+        </article>
+      </div>
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-info">
+          <p class="title">Peers</p>
+          <p class="subtitle" id="peers"></p>
+        </article>
+      </div>
+    </div>
+  </div>
+  <div class="tile is-ancestor">
+    <div class="tile">
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification" id="colorNotification">
+          <p class="title">Color</p>
+          <p class="subtitle" id="color"></p>
+        </article>
+      </div>
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-primary">
+          <p class="title">Blockchain Height</p>
+          <p class="subtitle" id="blockchain_height"></p>
+        </article>
+      </div>
+      <div class="tile is-parent is-4">
+        <article class="tile is-child notification is-link">
+          <p class="title">Capacity</p>
+          <p class="subtitle" id="capacity"></p>
+        </article>
+      </div>
+    </div>
+  </div> 
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>
+  function makeQR(id, value){
+    var qr = new QRious({
+      element: document.getElementById(id),
+      size: 300,
+      level: "H",
+      value: value
+    })
+  }
+
+  function writeInfo(info){
+    var json = JSON.parse(info); 
+    document.getElementById("nodeuri").innerHTML = json["uris"][0]
+    document.getElementById("network").innerHTML = json["chains"][0]['network']
+    document.getElementById("alias").innerHTML = json["alias"]
+    document.getElementById("version").innerHTML = json["version"]
+    document.getElementById("openchannels").innerHTML = json["num_active_channels"]
+    document.getElementById("closedchannels").innerHTML = json["num_inactive_channels"]
+    document.getElementById("peers").innerHTML = json["num_peers"]
+    document.getElementById("blockchain_height").innerHTML = json["block_height"]
+    document.getElementById("colorNotification").style.backgroundColor = json["color"]
+    document.getElementById("color").innerHTML = json["color"]
+    makeQR('nodeqr', json["uris"][0])
+  }
+
+  function writeChannelInfo(info){
+    var json = JSON.parse(info); 
+    document.getElementById("capacity").innerHTML = Number(json["total_capacity"]).toLocaleString() + " Sats"
+  }
+
+  function httpGetAsync(theUrl, callback)
+  {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.onreadystatechange = function() { 
+          if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            callback(xmlHttp.responseText);
+      }
+      xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+      xmlHttp.send(null);
+  }
+  httpGetAsync("/v1/getinfo", writeInfo)
+  httpGetAsync("/v1/nodeinfo", writeChannelInfo)
+</script>
+@endsection
