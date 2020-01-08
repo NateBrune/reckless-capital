@@ -127,6 +127,7 @@ class SwapController {
     swap.r_hash = invoice['r_hash']
     swap.satoshis = satoshis
     swap.paid = false
+    swap.failed = false
     await swap.save()
     return swap.id
   }
