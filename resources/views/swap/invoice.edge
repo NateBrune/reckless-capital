@@ -78,18 +78,23 @@
   function timeout() {
     setTimeout(function () {
       var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open( "GET", '/v1/swapstatus/{{ swap.id }}', false ); // false for synchronous request
-      xmlHttp.send( null );
-      var response = JSON.parse(xmlHttp.responseText)
-      //console.log(response)
-      if(response){
-        console.log(response)
-        if(response['paid']){
-          drawCheck('invoiceQRCode')
-          return
+      try{
+        xmlHttp.open( "GET", '/v1/swapstatus/{{ swap.id }}', false ); // false for synchronous request
+        xmlHttp.send( null );
+        var response = JSON.parse(xmlHttp.responseText)
+        if(response){
+          console.log(response)
+          if(response['paid']){
+            drawCheck('invoiceQRCode')
+            return
+          }
         }
+        timeout()
+      } catch(error) {
+        console.log(error)
+        timeout()
       }
-      timeout()
+
     }, 1500);
   }
   @if(!swap.paid)
