@@ -49,7 +49,6 @@ class BtcWalletController {
 
   async connectToLnd(){
     if(this.grpc === null){
-      console.log(this.grpc)
       this.grpc = new LndGrpc({
         host: LND_HOST,
         cert: LND_CERT,
@@ -146,7 +145,6 @@ class BtcWalletController {
   async getInfo(){
     await this.connectToLnd()
     const { Lightning } = this.grpc.services
-    console.log("getting info")
     var promise = new Promise((resolve, reject) => {
       Lightning.getInfo({}, function(err, response) {
         if(err){
@@ -347,7 +345,7 @@ class BtcWalletController {
           }
         })
     } catch (e){
-      console.log(e)
+      Logger.crit(e)
     }
   }
 
@@ -410,7 +408,7 @@ class BtcWalletController {
       }
 
     } catch (e){
-      console.log(e)
+      Logger.crit(e)
       throw e 
     }
     //console.log(listing)
@@ -474,10 +472,9 @@ class BtcWalletController {
     const tx = bitcoin.Psbt.fromHex(hexTx)
     try{
       tx.finalizeAllInputs()
-      console.log("tx is valid >:)")
       return await client.sendRawTransaction({hexstring: tx.extractTransaction().toHex()})
     } catch(e){
-      console.log(e)
+      Logger.crit(e)
     }
     //client.sendRawTransaction({hexstring: tx})
   }
