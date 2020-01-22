@@ -50,10 +50,6 @@ class Lightningroutine extends Task {
   async handle () {
     console.log("Handle!")
     this.initWallet()
-    await this.wallet.connectToLnd()
-    //await this.sleep(200)
-    await this.wallet.unlockLndWallet()
-    //await this.sleep(200)
     var queryListing = await Listing.query().where('funded', 1).fetch()
     //console.log(queryListing)
     var listings = []
@@ -79,8 +75,6 @@ class Lightningroutine extends Task {
         var info = await this.wallet.getNodeInfo(sellerNodePublicKey)
       } catch (e){
         //TODO: delete listing?
-        Logger.debug(`error getNodeInfo in Lightningroutine ${e}`)
-        console.log(`skipping bad public key: ${sellerNodePublicKey}`)
         continue
       }
       
@@ -106,7 +100,7 @@ class Lightningroutine extends Task {
         console.log("comparing " + Math.round(channel['capacity']) + " and " + new Number(listing['hasLSAT'] * Math.pow(10, 8)))
         if(channel['capacity'] == Math.round(new Number(listing['hasLSAT'] * Math.pow(10, 8)))){
           // We've established hat the channel is related to one of our listings
-          console.log("Found Channel: " + channel['channel_id'] + ':' + channel['chan_point'] + " for " + channel['capacity'])
+          console.log("Found new channel: " + channel['channel_id'] + ':' + channel['chan_point'] + " for " + channel['capacity'])
           foundChannel = true
           if(listing.channelOpen == false){
             await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
@@ -118,7 +112,6 @@ class Lightningroutine extends Task {
             lsting.channelMustBeOpenUntil = ((new Date().getTime() + (listing.sellerPeriod*60*1000)) / 1000).toFixed(0) //(listing.sellerPeriod*24*60*60*1000)) / 1000).toFixed(0)
             lsting.accepted = true
             await lsting.save()
-            Logger.debug("First Seen, updated listing and message.")
           } else {
             var lsting = await Listing.find(listing.id)
             lsting.consecutiveFailedCheckups = 0
@@ -130,7 +123,6 @@ class Lightningroutine extends Task {
 
 
         } else {
-          Logger.debug("skipping " + channel['capacity'] + " channel.")
           continue
         }
       }
@@ -138,7 +130,6 @@ class Lightningroutine extends Task {
         continue
       
       if( listing.channelMustBeOpenUntil && listing.channelMustBeOpenUntil < Math.floor(new Date().getTime() / 1000) ){
-        Logger.debug("expired? " + listing.channelMustBeOpenUntil + " " + Math.floor(new Date().getTime() / 1000))
         continue // should be finished?
       }
 
@@ -154,14 +145,12 @@ class Lightningroutine extends Task {
       lsting.channelOpen = false
 
       if(lsting.lastChanceToOpenChannel && lsting.lastChanceToOpenChannel < ((new Date().getTime() / 1000).toFixed(0))){
-        Logger.debug("marking " + lsting.id  + " expired " + lsting.lastChanceToOpenChannel + " < " + ((new Date().getTime() / 1000).toFixed(0)))
         lsting.consecutiveFailedCheckups = 99
       } else {
         lsting.consecutiveFailedCheckups = 0 // Not expired, so just reset counter.
       }
       await lsting.save()
 
-      Logger.debug("Failing "+ listing.id +" current consecutive failed checkups: " + lsting.consecutiveFailedCheckups)
       //console.table(listing)
       if(lsting.consecutiveFailedCheckups > 2){
         await this.markBuyerRedeemable(lsting.id, "Seller closed channel early")
@@ -178,11 +167,9 @@ class Lightningroutine extends Task {
   }
 
   async findExpiredMessages() {
-    Logger.debug("finding messages dogs")
     var now = (new Date().getTime() / 1000).toFixed(0)
     var listings = await Listing.query().whereNot({'lastChanceToFund': false, 'archived': true}).where('lastChanceToFund', '<', now).fetch()
     await this.asyncForEach(listings.toJSON(), async (listing) => {
-      Logger.debug(`Deleting Message and Listing ${listing.id}`)
       try{
         //var messagesthat = await Message.query().where({'aboutListing': listing.id, 'archived': false }).fetch()
         await Message.query().where({'aboutListing': listing.id, 'archived': false }).update({

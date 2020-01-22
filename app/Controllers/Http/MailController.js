@@ -3,7 +3,7 @@
 const Message = use('App/Models/Message')
 const Elites = use('App/Models/User')
 const Listing = use('App/Models/Listing')
-const User = use('App/Models/User')
+//const User = use('App/Models/User')
 const Logger = use('Logger')
 
 const BtcWalletController = use('App/Services/BtcWalletController')
@@ -245,8 +245,6 @@ class MailController {
           return response.redirect('back')
         }
         
-        await this.wallet.connectToLnd()
-        await this.wallet.unlockLndWallet()
         var connected = await this.wallet.connectPeerLND(request.input('buyerNodePublicKey'))
         if(!connected){
           session

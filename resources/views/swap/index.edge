@@ -10,7 +10,7 @@
 
 <form action="/swap" method="POST">
   <div class="box">
-    <h2 class="title">Create inbound liquidity using Lightning Loop</h2>
+    <h2 align="center" class="title">Lightning Loop out</h2>
       {{ csrfField() }}
       <div class="box">
         Lightning Loop creates liquidity by converting Bitcoins on the Lightning Network to Bitcoins on the main chain.
@@ -30,15 +30,32 @@
       </div>
 
       <!–– Return Address ––>
-      <div class="field">
-        <label class="label"> Return Address - Bitcoin Address you own. </label>
+      <label class="label"> Return Address - Bitcoin Address you own. </label>
+      <div class="field has-addons">
         <div class="control has-icons-left is-expanded">
-          <input class="input" type="text" name="address" value="{{ old('address', '') }}" placeholder="bc1qjl8uwezzlech723lpnyuza0h2cdkvxvh54v3dn">
+          <input class="input" type="text" name="address" id="btcAddress" value="{{ old('address', '') }}" placeholder="bc1qjl8uwezzlech723lpnyuza0h2cdkvxvh54v3dn">
           <span class="icon is-small is-left">
             <i class="fas fa-key"></i>
           </span>
         </div>
+        <div class="control">
+          <a class="button" onclick="addWebcamElement('scanner', getAddress)"><i class="fas fa-qrcode"></i></a>
+        </div>
       </div>
+      <center><div class="box" style="display: none" id="scanner"></div></center>
+      <script>
+        function getAddress(address){
+          var addressBox = document.getElementById('btcAddress')
+          var justAddress = address
+          if(address.split(':')[0] == "bitcoin"){
+            justAddress = address.split(':')[1]
+          }
+          if(addressBox){
+            addressBox.value = justAddress
+            document.getElementById("scanner").style.display = "none"
+          }
+        }
+      </script>
     {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('notification'), hasErrorFor('notification')) }}
     {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('liquidity'), hasErrorFor('liquidity')) }}
     {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('address'), hasErrorFor('address')) }}
@@ -49,7 +66,7 @@
   <br>
   <!–– Place Listing ––>
   <div class="control is-expanded">
-    <button type="submit" class="button is-medium is-fullwidth is-primary">
+    <button type="submit" class="button is-medium is-fullwidth is-info">
         Request
     </button>
   </div>

@@ -6,7 +6,7 @@
     <title>Reckless Capital</title>
     {{ style('/css/fa.min.css') }}
     <!--{{ style('/css/bulma.min.css') }}-->
-    
+    <script type="text/javascript" src="/js/jsqrscanner.nocache.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/bulmaswatch/united/bulmaswatch.min.css">
     <script>
         var totalbgCount = 18;
@@ -59,15 +59,75 @@
 
         var rows_txt = temp + "" + param + "=" + paramVal;
         return baseURL + "?" + newAdditionalURL + rows_txt;
-        }
+    }
 
-        function loadPage(page){
-            var url = updateURLParameter(window.location.href, 'page', page)
-            document.location.href = url
-        }
-        function loadAltProfile(id){
-            document.getElementById(id).src = "img/profile.svg"
-        }
+    function loadPage(page){
+        var url = updateURLParameter(window.location.href, 'page', page)
+        document.location.href = url
+    }
+    function loadAltProfile(id){
+        document.getElementById(id).src = "img/profile.svg"
+    }
+
+    function addWebcamElement(elementId, callback){
+    	var element = document.getElementById(elementId);
+    	if(element)
+    	{
+            if(element.style.display == "none"){
+                element.style.display = "block"
+                JsQRScannerReady_callback(callback)
+            } else {
+                element.style.display = "none"
+            }
+    	}
+    }
+    
+    //funtion returning a promise with a video stream
+    function provideVideoQQ(){
+        return navigator.mediaDevices.enumerateDevices()
+        .then(function(devices) {
+            var exCameras = [];
+            devices.forEach(function(device) {
+            if (device.kind === 'videoinput') {
+                exCameras.push(device.deviceId)
+            }
+        });
+            
+        return Promise.resolve(exCameras);
+        }).then(function(ids){
+            if(ids.length === 0)
+            {
+              return Promise.reject('Could not find a webcam');
+            }
+            
+            return navigator.mediaDevices.getUserMedia({
+                video: {
+                  'optional': [{
+                    'sourceId': ids.length === 1 ? ids[0] : ids[1]//this way QQ browser opens the rear camera
+                    }]
+                }
+            });        
+        });                
+    }  
+  
+    //this function will be called when JsQRScanner is ready to use
+    var jbScanner = null
+    function JsQRScannerReady_callback(callback)
+    {
+        //create a new scanner passing to it a callback function that will be invoked when
+        //the scanner succesfully scan a QR code
+        if(jbScanner == null){
+            jbScanner = new JsQRScanner(callback, provideVideoQQ);
+            //reduce the size of analyzed images to increase performance on mobile devices
+            jbScanner.setSnapImageMaxSize(300);
+            var scannerParentElement = document.getElementById("scanner");
+            if(scannerParentElement)
+            {
+                //append the jbScanner to an existing DOM element
+                jbScanner.appendTo(scannerParentElement);
+            }
+        } 
+    }
     </script>
 </head>
 <body> <!-- onload="changeBackground()"> -->

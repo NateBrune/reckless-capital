@@ -1,32 +1,185 @@
 @layout('master')
 
 @section('content')
-@if(!swap)
-<div class="box">
-  <center>Invoice not found!</center>
-</div>
-@elseif(!swap.paid)
-{{ script('js/qrcode.js') }}
-<div class="box">
-  <h1 align="center" class="title">Please pay the following lightning invoice.</h1>
-  </h1>
-  <br />
-  <img id="success" src="/img/success.png" style="display:none">
-  <center><canvas id="invoiceQRCode" width="300" height="300"></canvas></center>
-  <br />
-  <div class="notification is-light">
-    <h1 align="center" class="subtitle">{{ swap.invoice }}</h1>
-  </div>
-  <div class="notification is-info">
-      <h1 align="center" class="subtitle"> Total service fee: {{ quote }} Satoshis</h1>
-  </div>
-</div>
-@else
-<div class="box">
-  <h1 align="center" class="title">Payment recieved! Your Bitcoins should be arive within 30 minutes. Thank you.</h1>
-</div>
-@endif
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script>
+  function calculateSwapRefund(success = true){
+    var cost_server = {{ swap.cost_server }}
+    var cost_onchain = {{ swap.cost_onchain }}
+    var cost_offchain = {{ swap.cost_offchain }}
+    var totalFees = (cost_server + cost_onchain + cost_offchain)
+
+    
+    var satsPaid = {{ swap.satsPaid }}
+    var satsRequested = {{ swap.satsRequested }}
+    if(!success){
+      var excess = (satsPaid)
+    } else {
+      var excess = (satsPaid - satsRequested)
+    }
+
+    var baseFee = {{ swap.fee }}
+    var total = (excess - totalFees) - baseFee
+
+    return total
+  }
+  function getAddress(invoice){
+    var inputBox = document.getElementById('lnInvoice')
+    var justInvoice= invoice
+    if(invoice.split(':')[0] == "lightning"){
+      justInvoice = invoice.split(':')[1]
+    }
+    if(inputBox){
+      inputBox.value = justInvoice
+      document.getElementById("scanner").style.display = "none"
+    }
+  }
+
+</script>
+{{ swap.status }}
+@if(!swap)
+  <div class="box">
+    <center>Invoice not found!</center>
+  </div>
+@elseif(!swap.paid)
+  {{ script('js/qrcode.js') }}
+  <div class="box">
+    <h1 align="center" class="title">Please pay the following lightning invoice.</h1>
+    </h1>
+    <br/>
+    <img id="success" src="/img/success.png" style="display:none">
+    <center><canvas id="invoiceQRCode" width="300" height="300"></canvas></center>
+    <br />
+    <div class="notification is-light">
+      <h1 align="center" class="subtitle">{{ swap.invoice }}</h1>
+    </div>
+    <div class="notification is-info">
+        <h1 align="center" class="subtitle" id="swapNotification"> Total service fee: {{ quote }} Satoshis</h1>
+    </div>
+  </div>
+@elseif(swap.refunded)
+  <div class="box">
+    <h1 align="center" class="title">Swap complete!</h1>
+    <h1 align="center" class="subtitle">Order details shown below.</h1>
+
+    <table align="center" class="table">
+      <thead>
+        <tr>
+          <th>Satoshis requested</th>
+          <th>Swap Fee</th>
+          <th>Chain Transaction Fee</th>
+          <th>LN Transaction Fee</th>
+          <th>Serice Fee</th>
+          <th>Refund</th>
+          <th>Total Paid</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>{{ swap.satsRequested }}</th>
+          <th>{{ swap.cost_server }}</th>
+          <th>{{ swap.cost_onchain }}</th>
+          <th>{{ swap.cost_offchain }}</th>
+          <th>{{ swap.fee }}</th>
+          <th id="refundAmount">0</th>
+          <th>{{ swap.satsPaid }}</th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    @if(swap.status=="SUCCESS")
+      const total = calculateSwapRefund()
+    @else(swap.status=="FAILED")
+      const total = calculateSwapRefund(false) 
+    @endif
+
+    document.getElementById('refundAmount').innerHTML = total + " Satoshis"
+  </script>
+@else
+  @if(swap.status=="SUCCESS")
+    <div class="box">
+      <h1 align="center" class="title">Payment received! The swap has been initiated.</h1>
+      <h1 align="center" class="subtitle">Refund available! Please create an invoice for</h1>
+      <h1 align="center" id="refundAmount" class="title"></h1>
+      <br>
+      <form action="{{ "/refundSwap/"+swap.id }}" method="POST">
+        <div class="field is-grouped">
+          <div class="control is-expanded">
+            <input class="input" name="lnInvoice" id="lnInvoice"/>
+          </div>
+          <div class="control">
+            <a class="button" onclick="addWebcamElement('scanner', getAddress)"><i class="fas fa-qrcode"></i></a>
+          </div>
+          <p class="control">
+            <button type="submit" class="button is-info">
+              Refund Me!
+            </a>
+          </p>
+        </div>
+        <div class="field is-grouped">
+        </div>
+      </form>
+      <center><div class="box" style="display: none;" id="scanner"></div></center>
+      {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('invoice'), hasErrorFor('invoice')) }}
+      <p class="help is-success">{{ old('notification') }}</p>
+    </div>
+    <script>
+      const refund = calculateSwapRefund()
+      document.getElementById('refundAmount').innerHTML = refund + " Satoshis"
+    </script>
+  @elseif(swap.status=="FAILED")
+    <div class="notification is-danger">
+      Could not complete swap!
+    </div>
+    <div class="box">
+        <h1 align="center" class="title">Swap has failed. A refund is available.</h1>
+        <h1 align="center" class="subtitle">We appologize, we were unable to complete this swap with the Lightning Loop.</h1>
+        <br>
+        <h1 align="center" class="subtitle">Please create an invoice for </h1>
+        <h1 align="center" id="refundAmount" class="title"></h1>
+        <form action="{{ "/refundSwap/"+swap.id }}" method="POST">
+          <div class="field is-grouped">
+            <div class="control is-expanded">
+              <input class="input" name="lnInvoice" id="lnInvoice"/>
+            </div>
+            <div class="control">
+              <a class="button" onclick="addWebcamElement('scanner', getAddress)"><i class="fas fa-qrcode"></i></a>
+            </div>
+            <p class="control">
+              <button type="submit" class="button is-info">
+                Refund Me!
+              </a>
+            </p>
+          </div>
+          <div class="field is-grouped">
+          </div>
+        </form>
+        <center><div class="box" style="display: none;" id="scanner"></div></center>
+        {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('invoice'), hasErrorFor('invoice')) }}
+        <p class="help is-success">{{ old('notification') }}</p>
+    </div>
+    <script>
+      const total = calculateSwapRefund(false)
+      document.getElementById('refundAmount').innerHTML = total + " Satoshis"
+    </script>
+    
+  @else
+    <div class="box">
+      <h1 align="center" class="title">Payment received! The swap has been initiated.</h1>
+      <h1 align="center" class="subtitle">After a swap is complete you can come back and claim your partial fee refund.</h1>
+  @endif
+  @if(old('notification'))
+    <div class="notification is-success">
+      {{ old('notification') }}
+    </div>
+  @endif
+  @if(old('error'))
+    <div class="notification is-danger">
+      {{ old('error') }}
+    </div>
+  @endif
+@endif
 <script>
   function makeQR(id, value){
     var qr = new QRious({
@@ -83,15 +236,14 @@
         xmlHttp.send( null );
         var response = JSON.parse(xmlHttp.responseText)
         if(response){
-          console.log(response)
           if(response['paid']){
             drawCheck('invoiceQRCode')
+            document.getElementById('swapNotification').innerHTML = "Please refresh to get refund!"
             return
           }
         }
         timeout()
       } catch(error) {
-        console.log(error)
         timeout()
       }
 

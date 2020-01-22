@@ -192,8 +192,8 @@
 @endeach
 <div class="box">
   <nav class="pagination" role="navigation" aria-label="pagination">
-    <a class="pagination-previous" title="This is the first page" href="{{ listings.page == 1 ? '#' : '?page=' + (listings.page - 1) }}">Previous</a>
-    <a class="pagination-next" href="{{ listings.lastPage == listings.page ? '#' : '?page=' + (listings.page + 1) }}">Next page</a>
+    <a class="pagination-previous button is-primary is-info" title="This is the first page" href="{{ listings.page == 1 ? '#' : '?page=' + (listings.page - 1) }}">Previous</a>
+    <a class="pagination-next button is-primary is-info" href="{{ listings.lastPage == listings.page ? '#' : '?page=' + (listings.page + 1) }}">Next page</a>
     <ul class="pagination-list">
       <!--href="?page={{ page }}"-->
       @each(page in range(1, listings.lastPage+1))

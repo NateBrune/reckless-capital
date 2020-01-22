@@ -43,8 +43,6 @@ class LoginController {
         throw `Couldn't find user (${profile})`
       }
     }
-
-    Logger.debug(elite.toJSON()[0])
     return view.render( 'profile.index', {'profile': elite.toJSON()[0]}  )
   }
 
@@ -134,7 +132,6 @@ class LoginController {
 
     // end of validation 
     //console.log()
-    Logger.debug("challenge for: "+ this.wallet.deriveAddressFromPublicKey(elitePublicKey))
     //const elite = await User.query().where('publicKey', elitePublicKey).first()
     const challenge = this.generate(128)
     await Challenge.query().where('publicKey', elitePublicKey).delete()

@@ -29,7 +29,7 @@ const client = new Client({
   port: BTCD_PORT,
   username: BTCD_USERNAME,
   password: BTCD_PASSWORD,
-  version: '0.18.1'
+  version: '0.9.0'
 });
 
 //client.set('user', 'bitcoinrpc')
@@ -44,10 +44,12 @@ const client = new Client({
 class BtcWalletController {
   constructor(){
     this.grpc = null
+    //this.connectToLnd()
   }
 
   async connectToLnd(){
     if(this.grpc === null){
+      console.log(this.grpc)
       this.grpc = new LndGrpc({
         host: LND_HOST,
         cert: LND_CERT,
@@ -55,7 +57,6 @@ class BtcWalletController {
       })
 
       await this.grpc.connect()
-      console.log("grpc state: " + this.grpc.state)
     }
   }
 
@@ -73,6 +74,7 @@ class BtcWalletController {
   }
 
   async getNodeInfo(pubkey){
+    await this.connectToLnd()
     const { Lightning } = this.grpc.services
     try{
       var info = await Lightning.getNodeInfo({pub_key: pubkey, include_channels: true})
@@ -83,10 +85,12 @@ class BtcWalletController {
   }
 
   async connectPeerLND(lnaddress){
+    await this.connectToLnd()
     const { Lightning } = this.grpc.services
+
     try{
       var info = await Lightning.connectPeer({addr: {pubkey: lnaddress.split('@')[0], host:  lnaddress.split('@')[1]}})
-      console.log(info)
+      //console.log(info)
       return true
     } catch(e){
       if(e.message.includes('already connected to peer') || e.message.includes('cannot make connection to self')){
@@ -98,14 +102,17 @@ class BtcWalletController {
   }
 
   async lookupInvoice(hash){
+    await this.connectToLnd()
     const { Lightning } = this.grpc.services
-    
+
+    await this.connectToLnd()
     //var hashb64 = invoiceBuffer.toString('base64')
     //console.log(invoiceb64)
     var request = {
       r_hash: hash
     }
     var promise = new Promise((resolve, reject) => {
+      //console.log(Lightning)
       Lightning.lookupInvoice(request, function(err, response) {
         if(err){
           reject(err)
@@ -116,7 +123,28 @@ class BtcWalletController {
     return await promise
   }
 
+  async decodePaymentRequest(lnrequest){
+    await this.connectToLnd()
+    const { Lightning } = this.grpc.services
+    
+    var request = { 
+      pay_req: lnrequest
+    }
+
+    var promise = new Promise((resolve, reject) => {
+      Lightning.decodePayReq(request, function(err, response) {
+        if(err){
+          reject(err)
+        }
+        resolve(response)
+      })
+    })
+
+    return await promise
+  }
+
   async getInfo(){
+    await this.connectToLnd()
     const { Lightning } = this.grpc.services
     console.log("getting info")
     var promise = new Promise((resolve, reject) => {
@@ -133,25 +161,65 @@ class BtcWalletController {
 
 
   async addInvoice(satoshis, memo = null){
+    await this.connectToLnd()
     const { Lightning } = this.grpc.services
     if(memo){
       return await Lightning.addInvoice({ value: satoshis, memo: memo })
     } else {
       return await Lightning.addInvoice({ value: satoshis })
     }
-    
+  }
+
+  async payInvoice(lnInvoice, maxSatoshis = 0, feelimit = 0){
+    await this.connectToLnd()
+    const { Lightning } = this.grpc.services
+
+    const invoice = await this.decodePaymentRequest(lnInvoice)
+    if(!invoice){
+      return Error("Invalid invoice.")
+    }
+    const invoiceRequestedSatoshis = invoice['num_satoshis']
+
+    if(invoiceRequestedSatoshis==0 || invoiceRequestedSatoshis <= maxSatoshis){
+      // Reject invoice if it's billing for more than the maxSatoshis
+      
+
+
+      var paymentAmount = invoiceRequestedSatoshis
+      if(invoiceRequestedSatoshis == 0){
+        paymentAmount = maxSatoshis
+      }
+
+      var request = { 
+        amt: paymentAmount, 
+        payment_request: lnInvoice,
+        fee_limit: {'fixed': 50} // TODO Get this in the config
+      }
+      const promise = new Promise(async resolve => {
+        Lightning.sendPaymentSync(request, function(err, response){
+          if(err){
+            Logger.crit("Lightning payment error!")
+            reject(err)
+          }
+          resolve(response)
+        })
+      })
+      return await promise
+    } else {
+      return Error("Invoice too large.")
+    }
   }
 
   async resolveOnInvoice(){
+    this.connectToLnd()
     const { Lightning } = this.grpc.services
     
     var call = Lightning.subscribeInvoices()
 
     const promise = new Promise(async resolve => {
       call.on('error', function(error) {
-        t.equal(error.code, status.CANCELLED, 'call.cancel() should cancel an invoice subscription stream')
         if (error.code === status.CANCELLED) {
-          return resolve()
+          return reject()
         }
       })
       call.on('data', function(response) {
@@ -240,7 +308,7 @@ class BtcWalletController {
             if(message === null ) { console.log("recieved payment, but couldn't find buy message. Bad sign!?"); return }
             //console.log(detail)
             var totalpay = new Number(listing.stipend + listing.servicefee).toFixed(8)
-            console.log(totalpay + ":" + listing.stipend + listing.servicefee)
+            //console.log(totalpay + ":" + listing.stipend + listing.servicefee)
             if(totalpay <= detail['amount']){
               if(listing.inMempool == false && listing.funded == false){
                 listing.inMempool = true
@@ -300,7 +368,7 @@ class BtcWalletController {
     var extraSats = new Number(listing.fundingTransactionExtra)
     var totalSats = stipendSats + feeSats + extraSats
     var minfee = Math.round(totalSats * 0.00001) //relayfee on mainnet TODO: fix fee calculation
-    console.log(`${stipendSats} ${feeSats} ${extraSats} ${totalSats} ${minfee}`)
+    //console.log(`${stipendSats} ${feeSats} ${extraSats} ${totalSats} ${minfee}`)
     var FEE = (1*180 + 2*34 + 10)*5
     console.log(`fee set to: ${FEE}, could be set to ${minfee}`)
     psbt.addInput({

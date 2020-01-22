@@ -22,8 +22,6 @@ class ApiController {
     }
     // One in 10 chance when the user asks we actually lookup if the invoice is complete. This mitigates?
     if(!swap.paid && new Date(swap.created_at).getTime() + 60000 < Date.now() && !(Date.now()%10)){
-      await this.wallet.connectToLnd()
-      await this.wallet.unlockLndWallet()
       var invoice = await this.wallet.lookupInvoice(swap.r_hash)
       if(invoice.state === 'SETTLED'){
         await Swapinvoice.query().where({'invoice': invoice.payment_request, 'addIndex': invoice.add_index }).update({
@@ -39,8 +37,6 @@ class ApiController {
     var endTime = new Date();
     // If we have elapsed 10 minutes since we last checked get latest info on our node.
     if(this.lastCheckForMe == null || endTime - this.lastCheck > 600000){
-      await this.wallet.connectToLnd()
-      await this.wallet.unlockLndWallet()
       var info = await this.wallet.getInfo()
       this.aboutMe = await this.wallet.getNodeInfo(info['identity_pubkey'])
     }
@@ -52,8 +48,6 @@ class ApiController {
     var endTime = new Date();
     // If we have elapsed 10 minutes since we last checked get latest info on our node.
     if(this.lastCheckForInfo == null || endTime - this.lastCheck > 600000){
-      await this.wallet.connectToLnd()
-      await this.wallet.unlockLndWallet()
       this.nodeinfo = await this.wallet.getInfo()
     }
     this.lastCheckForInfo = endTime

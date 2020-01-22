@@ -45,6 +45,7 @@ Route.get('withdrawFrom/:id', 'ListingController.withdrawFrom').middleware('auth
 Route.get('profile/:key', 'LoginController.viewProfile')
 Route.get('/swap', 'SwapController.index')
 Route.post('/swap', 'SwapController.requestSwapOut')
+Route.post('/refundSwap/:id', 'SwapController.requestSwapRefund')
 Route.get('/swapstatus/:id', 'SwapController.swapStatus')
 Route.get('/nodeinfo/', 'HelpController.nodeInfo')
 Route.get('/v1/nodeinfo', 'ApiController.nodeInfo')

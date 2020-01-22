@@ -54,6 +54,7 @@
           </span>
         </p>
       </div>
+      <!--
       <label> Point of contact. An email address, phone number, etc...
       <div class="field">
         <p class="control has-icons-left has-icons-right">
@@ -66,6 +67,8 @@
           </span>
         </p>
       </div>
+      -->
+      <!--
       <div class="field">
         <p class="control has-icons-left has-icons-right">
           <input class="input" type="text" id="refund" name="refund" placeholder="Refund Address (optional)" value="{{ old('email', '') }}">
@@ -77,6 +80,7 @@
           </span>
         </p>
       </div>
+      -->
 
       <input type="hidden" name="publicKey" id="publicKey" value="" />
       <input type="hidden" name="signature" id="signature" value="" />
@@ -95,7 +99,7 @@
           </span>
         </p>
         <div class="control">
-          <input class="button" onclick="signChallenge()" value="Register">
+          <input class="button is-info" onclick="signChallenge()" value="Register">
         </div>
       </div>
     </form>

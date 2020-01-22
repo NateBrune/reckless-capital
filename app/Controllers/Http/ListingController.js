@@ -96,8 +96,6 @@ class ListingController {
     // persist to database
     const elite = await auth.getUser()
     const listing = new Listing()
-    await this.wallet.connectToLnd()
-    await this.wallet.unlockLndWallet()
     var connected = await this.wallet.connectPeerLND(request.input('owner'))
     if(!connected){
       session
@@ -221,16 +219,15 @@ class ListingController {
   async withdrawFrom({response, session, params, auth}){
     const listing = await Listing.find(params.id)
     if(listing == null){
-      Logger.debug(`tried to withdraw invalid listing ${params.id}`)
+      Logger.debug(`Tried to withdraw invalid listing ${params.id}`)
       session
       .withErrors([{ field: 'notification', message: 'Invalid offer id.' }])
       .flashAll()
       return response.redirect('/offers')
     }
-    Logger.debug("attempting to withdrawl: " + auth.user.publicKey)
     if(listing.sellerRedeemable && auth.user.publicKey == listing.sellerPublicKey){
       var txData = await this.wallet.refundListing(params.id, listing.sellerAddress, false, 1)
-      Logger.debug("reward sent to: " + listing.sellerAddress)
+      Logger.info("reward sent to: " + listing.sellerAddress)
       session.flash({ notification: 'Reward sent to your address!' })
       return response.redirect('/plsSignTx/'+txData)
     } else if(listing.buyerRedeemable && auth.user.publicKey == listing.buyerPublicKey){
@@ -240,7 +237,7 @@ class ListingController {
         Logger.debug("refund sent to: " + listing.buyerAddress)
         return response.redirect('/plsSignTx/'+txData)
       } catch(e){
-        Logger.debug(`withdrawing encountered error on listing: ${params.id}`)
+        Logger.crit(`withdrawing encountered error on listing: ${params.id}`)
         Logger.debug(e)
         session.flash({ notification: 'A server error occured while attempted to withdraw. Please get in contact.' }) //TODO: get contact email setup
         return response.redirect('/offers')
