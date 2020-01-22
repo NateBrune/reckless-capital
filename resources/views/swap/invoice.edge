@@ -98,8 +98,8 @@
 @else
   @if(swap.status=="SUCCESS")
     <div class="box">
-      <h1 align="center" class="title">Payment received! The swap has been initiated.</h1>
-      <h1 align="center" class="subtitle">Refund available! Please create an invoice for</h1>
+      <h1 align="center" class="title">Swap Complete. Refund Available!</h1>
+      <h1 align="center" class="subtitle">Please create an invoice for</h1>
       <h1 align="center" id="refundAmount" class="title"></h1>
       <br>
       <form action="{{ "/refundSwap/"+swap.id }}" method="POST">
