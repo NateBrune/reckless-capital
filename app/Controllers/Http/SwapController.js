@@ -93,15 +93,15 @@ class SwapController {
       return response.redirect('back')
     }
 
-    if(swap.status != "FAILED" && swap.status != "SUCCESS"){
-      return response.redirect('back')
-    }
-
     const lnInvoice = request.input('lnInvoice')
     const invoiceID = url.split("/")[2]
     const swap = await Swapinvoice.find(invoiceID)
     if(!swap){
       session.flash({ error: "Could not find invoice!"})
+      return response.redirect('back')
+    }
+
+    if(swap.status != "FAILED" && swap.status != "SUCCESS"){
       return response.redirect('back')
     }
 
