@@ -193,7 +193,7 @@ class BtcWalletController {
         payment_request: lnInvoice,
         fee_limit: {'fixed': 50} // TODO Get this in the config
       }
-      const promise = new Promise(async resolve => {
+      const promise = new Promise(async (resolve, reject) => {
         Lightning.sendPaymentSync(request, function(err, response){
           if(err){
             Logger.crit("Lightning payment error!")
@@ -214,10 +214,10 @@ class BtcWalletController {
     
     var call = Lightning.subscribeInvoices()
 
-    const promise = new Promise(async resolve => {
+    const promise = new Promise(async (resolve, reject) => {
       call.on('error', function(error) {
         if (error.code === status.CANCELLED) {
-          return reject()
+          return reject("CANCELLED")
         }
       })
       call.on('data', function(response) {
