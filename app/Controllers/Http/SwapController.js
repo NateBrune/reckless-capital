@@ -77,8 +77,12 @@ class SwapController {
     }
   }
 
-  async index ({ view }) {
+  async loop ({ view }) {
     return view.render(`swap.index`)
+  }
+
+  async swap ({ view }) {
+    return view.render(`swap.swap`)
   }
 
   async requestSwapRefund ({response, session, request}){

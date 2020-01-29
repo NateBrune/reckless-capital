@@ -16,7 +16,7 @@
 /** @type {typeof import('@adonisjs/framework/src/Route/Manager')} */
 const Route = use('Route')
 
-Route.get('/', 'HelpController.index')
+Route.get('/', 'SwapController.swap')
 Route.get('help/:page', 'HelpController.index')
 Route.get('help', 'HelpController.index')
 Route.get('/listings', 'ListingController.index')
@@ -43,7 +43,8 @@ Route.post('broadcastTx', 'LoginController.broadcastTx').middleware('auth')
 Route.post('walletnotify', 'ListingController.walletnotify')
 Route.get('withdrawFrom/:id', 'ListingController.withdrawFrom').middleware('auth')
 Route.get('profile/:key', 'LoginController.viewProfile')
-Route.get('/swap', 'SwapController.index')
+Route.get('/loop', 'SwapController.loop')
+Route.get('/swap', 'SwapController.swap')
 Route.post('/swap', 'SwapController.requestSwapOut')
 Route.post('/refundSwap/:id', 'SwapController.requestSwapRefund')
 Route.get('/swapstatus/:id', 'SwapController.swapStatus')
