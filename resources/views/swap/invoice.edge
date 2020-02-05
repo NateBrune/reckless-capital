@@ -121,7 +121,7 @@
           })
           document.getElementById('lnInvoice').value = paymentResult.paymentRequest
         } catch (error) {
-          console.log("error: " + error)
+          return
         }
       }
     </script>
@@ -175,13 +175,16 @@
               <a class="button" onclick="addWebcamElement('scanner', getAddress)"><i class="fas fa-qrcode"></i></a>
             </div>
             <p class="control">
-              <button type="submit" class="button is-info">
-                Refund Me!
+              <a class="button is-primary has-text-centered" onclick="makeInvoice(calculateSwapRefund())">
+                Create Invoice
               </a>
             </p>
           </div>
           <div class="field is-grouped">
           </div>
+          <button type="submit" class="button is-info is-fullwidth">
+            Refund Me!
+          </button>
         </form>
         <center><div class="box" style="display: none;" id="scanner"></div></center>
         {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('invoice'), hasErrorFor('invoice')) }}
