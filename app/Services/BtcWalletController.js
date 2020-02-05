@@ -216,7 +216,7 @@ class BtcWalletController {
 
     const promise = new Promise(async (resolve, reject) => {
       call.on('error', function(error) {
-        if (error.code === status.CANCELLED) {
+        if (error.code === error.CANCELLED) {
           return reject("CANCELLED")
         }
       })

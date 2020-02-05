@@ -183,7 +183,7 @@ class SwapController {
     const requestedSats =  Math.round((request.input('liquidity') * 100000000))
     const totalInvoice = requestedSats + await this.calculateTotalFees(requestedSats)
 
-    var invoiceId = await this.wallet.addInvoice(totalInvoice, `RC SWAP ${requestedSats} OFF ${returnAddress}`)
+    var invoiceId = await this.wallet.addInvoice(totalInvoice, `RC SWAP {requestedSats} OFF ${returnAddress}`)
     const swapId = await this.createSwapRecord(invoiceId, returnAddress, totalInvoice, requestedSats)
     var result = this.wallet.resolveOnInvoice()
     result.then(this.handleInvoiceStatus(result))

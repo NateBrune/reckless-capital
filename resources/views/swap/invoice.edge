@@ -2,6 +2,12 @@
 
 @section('content')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script
+  src="https://unpkg.com/webln@0.2.0/dist/webln.min.js"
+  integrity="sha384-mTReBqbhPO7ljQeIoFaD1NYS2KiYMwFJhUNpdwLj+VIuhhjvHQlZ1XpwzAvd93nQ"
+  crossorigin="anonymous"
+></script>
+
 <script>
   function calculateSwapRefund(success = true){
     var cost_server = {{ swap.cost_server }}
@@ -47,14 +53,22 @@
     </h1>
     <br/>
     <img id="success" src="/img/success.png" style="display:none">
-    <center><canvas id="invoiceQRCode" width="300" height="300"></canvas></center>
+      <center> <canvas id="invoiceQRCode" width="300" height="300"></canvas></center>
     <br />
     <div class="notification is-light">
       <h1 align="center" class="subtitle">{{ swap.invoice }}</h1>
     </div>
-    <div class="notification is-info">
-        <h1 align="center" class="subtitle" id="swapNotification"> Total service fee: {{ quote }} Satoshis</h1>
-    </div>
+    <script type="application/javascript">
+      async function payInvoiceWebLN(paymentRequest){
+        try{
+          const webln = await WebLN.requestProvider();
+          const paymentResult = await webln.sendPayment(paymentRequest);
+        } catch (error) {
+          console.log("error: " + error)
+        }
+      }
+    </script>
+    <a class="button is-fullwidth is-info has-text-centered" onclick="payInvoiceWebLN('{{ swap.invoice }}')">Total service fee: {{ quote }} Satoshis</a>
   </div>
 @elseif(swap.refunded)
   <div class="box">
@@ -97,6 +111,20 @@
   </script>
 @else
   @if(swap.status=="SUCCESS")
+    <script>
+      async function makeInvoice(amt){
+        try{
+          const webln = await WebLN.requestProvider()
+          const paymentResult = await webln.makeInvoice({
+            amount: amt,
+            defaultMemo: "RC SWAP REFUND #" + String({{ swap.id }})
+          })
+          document.getElementById('lnInvoice').value = paymentResult.paymentRequest
+        } catch (error) {
+          console.log("error: " + error)
+        }
+      }
+    </script>
     <div class="box">
       <h1 align="center" class="title">Swap Complete. Refund Available!</h1>
       <h1 align="center" class="subtitle">Please create an invoice for</h1>
@@ -105,19 +133,20 @@
       <form action="{{ "/refundSwap/"+swap.id }}" method="POST">
         <div class="field is-grouped">
           <div class="control is-expanded">
-            <input class="input" name="lnInvoice" id="lnInvoice"/>
+            <input class="input" name="lnInvoice" defaul id="lnInvoice" placeholder="Paste your payment request."/>
           </div>
           <div class="control">
             <a class="button" onclick="addWebcamElement('scanner', getAddress)"><i class="fas fa-qrcode"></i></a>
           </div>
           <p class="control">
-            <button type="submit" class="button is-info">
-              Refund Me!
+            <a class="button is-primary has-text-centered" onclick="makeInvoice(calculateSwapRefund())">
+              Create Invoice
             </a>
           </p>
         </div>
         <div class="field is-grouped">
         </div>
+        <button type="submit" class="button is-info is-fullwidth">Refund Me!</button>
       </form>
       <center><div class="box" style="display: none;" id="scanner"></div></center>
       {{ elIf('<p class="help is-danger">$self</p>', getErrorFor('invoice'), hasErrorFor('invoice')) }}
