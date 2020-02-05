@@ -110,21 +110,21 @@
     document.getElementById('refundAmount').innerHTML = total + " Satoshis"
   </script>
 @else
+  <script>
+  async function makeInvoice(amt){
+    try{
+      const webln = await WebLN.requestProvider()
+      const paymentResult = await webln.makeInvoice({
+        amount: amt,
+        defaultMemo: "RC SWAP REFUND #" + String({{ swap.id }})
+      })
+      document.getElementById('lnInvoice').value = paymentResult.paymentRequest
+    } catch (error) {
+      return
+    }
+  }
+  </script>
   @if(swap.status=="SUCCESS")
-    <script>
-      async function makeInvoice(amt){
-        try{
-          const webln = await WebLN.requestProvider()
-          const paymentResult = await webln.makeInvoice({
-            amount: amt,
-            defaultMemo: "RC SWAP REFUND #" + String({{ swap.id }})
-          })
-          document.getElementById('lnInvoice').value = paymentResult.paymentRequest
-        } catch (error) {
-          return
-        }
-      }
-    </script>
     <div class="box">
       <h1 align="center" class="title">Swap Complete. Refund Available!</h1>
       <h1 align="center" class="subtitle">Please create an invoice for</h1>
