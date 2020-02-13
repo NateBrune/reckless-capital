@@ -13,6 +13,7 @@ class ListingsSchema extends Schema {
       table.integer('servicefee').notNullable().unsigned()
       table.integer('sellerPeriod').notNullable().unsigned()
       table.string('sellerPublicKey').notNullable()
+      table.string('sellerAlias').notNullable()
       table.string('sellerAddress').notNullable()
       table.integer('hasLSAT').unsigned()
       table.integer('wantsLSAT').unsigned()

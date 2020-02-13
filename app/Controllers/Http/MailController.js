@@ -130,9 +130,9 @@ class MailController {
       // Put listing back on the map
       if(listing != null){
         if(listing.consecutiveFailedCheckups == 99 && !(listing.sellerRedeemable || listing.buyerRedeemable || listing.funded || listing.inMempool)){
-          var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, false, -1)
-        } else if(listing.funded == false){
-          await this.wallet.resetListing(message.aboutListing)
+          //var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, false, -1)
+          await User.query().where({'publicKey': listing.sellerPublicKey}).increment('disputedTxn', 1)
+          await User.query().where({'publicKey': listing.buyerPublicKey}).increment('disputedTxn', 1)
         } else {
           //var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, true)
           session
@@ -140,6 +140,8 @@ class MailController {
           .flashAll()
           return response.redirect('/offers')
         }
+        if(listing.funded == false)
+          await this.wallet.resetListing(message.aboutListing)
       }
     }
     session.flash({ notification: 'Message deleted!' })
@@ -148,7 +150,7 @@ class MailController {
     return response.redirect('back')
   }
 
-  async setMessage (message, msgType, tx) {
+  async setMessage (message, msgType) {
     if(msgType == MSG_REGULAR){
       return message
     } else {
@@ -164,7 +166,7 @@ class MailController {
     })
     // show error messages upon validation fail
     if (validation.fails()) {
-      console.log("validation failed @ MailController sendMsg")
+      Logger.debug("validation failed @ MailController sendMsg")
       session.withErrors(validation.messages())
               .flashAll()
       return response.redirect('back')
@@ -210,12 +212,11 @@ class MailController {
           return response.redirect('back')
         }
         tx = await walletService.appendP2WSHtoListing(referenceListing, elite.publicKey,toElite.publicKey)
-        _Message = await this.setMessage(request.input('message'), msgType, tx)
-
-        
-        await Elites.query().where('username', request.input('toElite').toString()).update({
-          hasOffer: true
-        })
+        _Message = await this.setMessage(request.input('message'), msgType)
+        if(referenceListing.stipend == 0){
+          Logger.debug("free listing")
+          _Message = "funded"
+        }
 
         if(!elite.refundAddress && !request.input('buyerRefundAddress')){
           session
@@ -223,6 +224,10 @@ class MailController {
           .flashAll()
           return response.redirect('back')
         }
+
+        await Elites.query().where('username', request.input('toElite').toString()).update({
+          hasOffer: true
+        })
 
         await Elites.query().where('username', auth.user.username).update({
           hasOffer: true
@@ -256,7 +261,11 @@ class MailController {
         referenceListing.buyerNodePublicKey = request.input('buyerNodePublicKey')
         referenceListing.buyerPublicKey = elite.publicKey
         referenceListing.sellerPublicKey = toElite.publicKey
-        referenceListing.lastChanceToFund = new Number((new Date().getTime() + 3*60*1000) / 1000).toFixed(0)
+        if(referenceListing.stipend != 0){
+          referenceListing.lastChanceToFund = new Number((new Date().getTime() + 60*60*1000) / 1000).toFixed(0)
+        } else {
+          referenceListing.lastChanceToFund = false
+        }
         Logger.info(`last chance to fund ${referenceListing.lastChanceToFund}`)
         try{
           await referenceListing.save()
@@ -298,11 +307,6 @@ class MailController {
       .withErrors([{ field: 'notification', message: 'Message type-('+msgType+'): Failed to send message.' }])
       .flashAll()
       return response.redirect('back')
-    }
-    try {
-      
-    } catch {
-
     }
 
     // Fash success message to session

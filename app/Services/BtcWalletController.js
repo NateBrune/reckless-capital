@@ -29,7 +29,7 @@ const client = new Client({
   port: BTCD_PORT,
   username: BTCD_USERNAME,
   password: BTCD_PASSWORD,
-  version: '0.9.0'
+  version: '0.19.0'
 });
 
 //client.set('user', 'bitcoinrpc')
@@ -291,8 +291,9 @@ class BtcWalletController {
     }
   }
 
-  /* Bitcoind will trigger this function and give it a transaction id. The transaction is first sent once it's in the mempool. 
-  It's triggered again once the transaction is confirmed in one block. */
+  /* Bitcoind will trigger this function and give it a transaction id twice.
+    Bitcoind sends the txid once when the transaction enters the mempool.
+    This function is triggered again after the transaction is included in one block. */
   
   async walletNotify(txid){
     try{
@@ -326,7 +327,7 @@ class BtcWalletController {
                 var totalSats = Math.round(new Number(detail['amount']) * 100000000)
                 var extra = totalSats - Math.round(new Number(listing.stipend) * 100000000) - Math.round(new Number(listing.servicefee) * 100000000 ) 
                 listing.fundingTransactionExtra = extra
-                listing.lastChanceToAccept = ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0)
+                listing.lastChanceToAccept = ((new Date().getTime() + (3*24*60*60*1000)) / 1000).toFixed(0)
                 console.log("funded: "+ listing.fundingTransactionAmount)
                 listing.save()
                 message.message = "funded"
@@ -349,8 +350,7 @@ class BtcWalletController {
     }
   }
 
-  async refundListing(id, refundAddress, resetListing, reputation = 0){
-    console.log("looking up listing: "+ id)
+  async refundListing(id, refundAddress, resetListing){
     var listing = await Listing.find(id)
     if(listing == null ) { return new Error("Invalid listing id specified. Couldn't find listing.")}
     const serverKeyPair = this.deriveServerKeyPair(id)
@@ -358,7 +358,6 @@ class BtcWalletController {
     const psbt = new bitcoin.Psbt({ network: TESTNET })
     psbt.setVersion(2); // These are defaults. This line is not needed.
     psbt.setLocktime(0); // These are defaults. This line is not needed.
-    console.log("input value: " + listing.fundingTransactionAmount)
 
     // Pay stipend
     var stipendSats = Math.round(new Number(listing.stipend) * 100000000)
@@ -367,7 +366,8 @@ class BtcWalletController {
     var totalSats = stipendSats + feeSats + extraSats
     var minfee = Math.round(totalSats * 0.00001) //relayfee on mainnet TODO: fix fee calculation
     //console.log(`${stipendSats} ${feeSats} ${extraSats} ${totalSats} ${minfee}`)
-    var FEE = (1*180 + 2*34 + 10)*5
+    // 1 Sat per byte + 2 for good luck
+    var FEE = (1*180 + 2*34 + 10) + 2
     console.log(`fee set to: ${FEE}, could be set to ${minfee}`)
     psbt.addInput({
       hash: listing.fundingTransactionHash,
@@ -417,26 +417,6 @@ class BtcWalletController {
     if(resetListing){
       await this.resetListing(id)
     }
-      
-    //await Message.query().where('aboutListing', id).delete()
-    await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
-      archived: true
-    })
-
-    switch(reputation) {
-      case 0:
-        
-      case 1:
-        await User.query().where({'publicKey': listing.sellerPublicKey}).increment('undisputedTxn', 1)
-        await User.query().where({'publicKey': listing.buyerPublicKey}).increment('undisputedTxn', 1)
-        break
-      case -1:
-        await User.query().where({'publicKey': listing.sellerPublicKey}).increment('disputedTxn', 1)
-        await User.query().where({'publicKey': listing.buyerPublicKey}).increment('disputedTxn', 1)
-        break
-      default:
-        break
-    } 
     
     return psbt.toHex()
   }

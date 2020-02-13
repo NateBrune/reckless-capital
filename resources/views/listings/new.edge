@@ -1,7 +1,47 @@
 @layout('master')
 
 @section('content')
+<script
+  src="https://unpkg.com/webln@0.2.0/dist/webln.min.js"
+  integrity="sha384-mTReBqbhPO7ljQeIoFaD1NYS2KiYMwFJhUNpdwLj+VIuhhjvHQlZ1XpwzAvd93nQ"
+  crossorigin="anonymous"
+></script>
+<script>
+  async function guessDetailsLN(){
+    try{
+      const webln = await WebLN.requestProvider();
+      const info = await webln.getInfo();
+      if(info){
+        console.log(info)
+        const pubkey = info.node.pubkey
+        const url = '/v1/nodeinfo/' + pubkey
+        console.log("url " + url)
+        var xmlHttp = new XMLHttpRequest()
+        xmlHttp.open( "GET", url, false ) // false for synchronous request
+        xmlHttp.send( null );
+        var response = JSON.parse(xmlHttp.responseText)
+        if(response){
+          var addr = null
+          response.node.addresses.forEach(address => {
+            if(address.addr.includes(".onion")){
+              addr = address.addr
+              return
+            }
+          })
+          if(addr == null && response.node.addresses.length > 0){
+            addr = response.node.addresses[0].addr
+          }
+          document.getElementById('lnAddress').value = pubkey + "@" + addr
+        } else {
+          throw("Couldn't find peer")
+        }
 
+      }
+    } catch (error) {
+      document.getElementById('lnAddress').value = error
+    }
+  }
+</script>
 @if(old('notification'))
 <div class="notification is-success">
     {{ old('notification') }}
@@ -21,6 +61,9 @@
           <span class="icon is-small is-left">
             <i class="fas fa-key"></i>
           </span>
+        </div>
+        <div class="control">
+          <a class="button is-primary" onclick="guessDetailsLN()">Guess</a>
         </div>
         <div class="control">
           <a class="button" onclick="addWebcamElement('scanner', getAddress)"><i class="fas fa-qrcode"></i></a>

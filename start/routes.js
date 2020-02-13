@@ -50,6 +50,7 @@ Route.post('/refundSwap/:id', 'SwapController.requestSwapRefund')
 Route.get('/swapstatus/:id', 'SwapController.swapStatus')
 Route.get('/nodeinfo/', 'HelpController.nodeInfo')
 Route.get('/v1/nodeinfo', 'ApiController.nodeInfo')
+Route.get('/v1/nodeinfo/:id', 'ApiController.nodeInfo')
 Route.get('/v1/swapstatus/:id', 'ApiController.swapStatus')
 Route.get('/v1/getinfo/', 'ApiController.getInfo')
 

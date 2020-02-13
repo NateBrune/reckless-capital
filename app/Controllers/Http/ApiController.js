@@ -13,7 +13,7 @@ class ApiController {
     //this.swapClient = new looprpc.SwapClient('localhost:11010', grpc.credentials.createInsecure());
   }
 
-  async swapStatus ({ view, request }) {
+  async swapStatus ({ request }) {
     const swapId = request.url().split("/")[3]
     const swap = await Swapinvoice.find(swapId)
     if(!swap){
@@ -33,15 +33,20 @@ class ApiController {
     return response
   }
   
-  async nodeInfo() {
-    var endTime = new Date();
-    // If we have elapsed 10 minutes since we last checked get latest info on our node.
-    if(this.lastCheckForMe == null || endTime - this.lastCheck > 600000){
-      var info = await this.wallet.getInfo()
-      this.aboutMe = await this.wallet.getNodeInfo(info['identity_pubkey'])
+  async nodeInfo({ request }) {
+    const nodeId = request.url().split("/")[3]
+    if(nodeId){
+      return await this.wallet.getNodeInfo(nodeId)
+    } else {
+      var endTime = new Date();
+      // If we have elapsed 10 minutes since we last checked get latest info on our node.
+      if(this.lastCheckForMe == null || endTime - this.lastCheck > 600000){
+        var info = await this.wallet.getInfo()
+        this.aboutMe = await this.wallet.getNodeInfo(info['identity_pubkey'])
+      }
+      this.lastCheckForMe= endTime
+      return this.aboutMe
     }
-    this.lastCheckForMe= endTime
-    return this.aboutMe
   }
 
   async getInfo() {

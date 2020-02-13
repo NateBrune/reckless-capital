@@ -179,7 +179,7 @@ class Lightningroutine extends Task {
         //lsting.lastChanceToFund = false
         //lsting.pendingAccept = false
         this.wallet.resetListing(listing.id)
-        lsting.save()
+        listing.save()
       } catch (e) {
         Logger.debug(e)
       }

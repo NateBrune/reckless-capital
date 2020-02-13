@@ -43,7 +43,7 @@
                     </p>
                   @elseif(message.message == "funded")
                     <p>
-                      Payment confirmed. Waiting for seller to accept order and open channel. If the order is not confirmed within three days the funds may be withdrawn.
+                      Order created. Waiting for seller to accept order and open channel. If the order is not accepted within three days any fees will be refunded.
                     </p>
                   @elseif(message.message == "channelOpen")
                     <p>
@@ -124,8 +124,9 @@
               width : 150,
               height : 150
             });
-            
-            qrcode.makeCode("{{{ 'bitcoin:' + listings[message.aboutListing].fundingAddress + '?amount=' + listings[message.aboutListing].stipend + '&label=Reckless-Capital' }}}")
+            var calculatedSats = new Number((Math.round({{ listings[message.aboutListing].stipend }}*100000000)+Math.round({{ listings[message.aboutListing].servicefee }}*100000000)) / 100000000).toFixed(8)
+            var url = 'bitcoin:' + "{{ listings[message.aboutListing].fundingAddress }}" + '?amount=' + calculatedSats + '&label=Reckless-Capital'
+            qrcode.makeCode(url)
             </script>
           @elseif(message.message == "channelOpen")
             <div class="notification is-success">

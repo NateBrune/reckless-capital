@@ -2,6 +2,7 @@
 
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
+const User = use('App/Models/User')
 const { validate } = use('Validator')
 const Logger = use('Logger')
 
@@ -111,7 +112,17 @@ class ListingController {
       return response.redirect('back')
     }
 
-    listing.sellerNodePublicKey = request.input('owner')
+    const sellerPublicKey = request.input('owner')
+    //console.log(sellerPublicKey)
+    const peerInfo = await this.wallet.getNodeInfo(sellerPublicKey.split('@')[0])
+    //Logger.debug(peerInfo["node"]["alias"])
+    if(peerInfo["node"]["alias"]){
+      listing.sellerAlias = peerInfo["node"]["alias"]
+    } else {
+      listing.sellerAlias = sellerPublicKey
+    }
+
+    listing.sellerNodePublicKey = sellerPublicKey
     listing.stipend = new Number(request.input('stipend')).toFixed(8)
     // Official Documentation: Floating point numbers cannot represent all decimals precisely in binary which can lead to unexpected results such as 0.1 + 0.2 === 0.3 returning false.
     // This is imprecise and may be abused by the users but i've decided to live with it.
@@ -130,7 +141,12 @@ class ListingController {
     listing.picture = elite.picture
     listing.pendingAccept = false
     listing.inMempool = false
-    listing.funded = false
+    if(listing.stipend == 0){
+      listing.funded = true
+      listing.lastChanceToAccept = ((new Date().getTime() + (3*24*60*60*1000)) / 1000).toFixed(0)
+    } else {
+      listing.funded = false
+    }
     listing.accepted = false
     listing.channelOpen = false
     listing.sellerRedeemable = false
@@ -182,12 +198,12 @@ class ListingController {
       session.flash({ notification: 'Accepted!' })
       return response.redirect('back')
     } else {
-        if(listing.lastChanceToAccept > (new Date().getTime() / 1000).toFixed(0)){
-          session
-          .withErrors([{ field: 'notification', message: "Too late to accept listing!" }])
-          .flashAll()
-          return response.redirect('back')
-        }
+      if(listing.lastChanceToAccept > (new Date().getTime() / 1000).toFixed(0)){
+        session
+        .withErrors([{ field: 'notification', message: "Too late to accept listing!" }])
+        .flashAll()
+        return response.redirect('back')
+      }
       session
       .withErrors([{ field: 'notification', message: "Invalid user for this listing." }])
       .flashAll()
@@ -206,14 +222,50 @@ class ListingController {
       return response.redirect('back')
     }
     if(auth.user.publicKey === listing.sellerPublicKey){
-      var txData = await this.wallet.refundListing(id, listing.buyerAddress, true)
-      return response.redirect('/plsSignTx/'+txData)
+      if(listing.stipend != 0){
+        var txData = await this.wallet.refundListing(params.id, listing.buyerAddress, true)
+        await this.archiveListingSetReputation(params.id, 0)
+        return response.redirect('/plsSignTx/'+txData)
+      } else {
+        await Message.query().where({'aboutListing': listing.id, 'archived': false}).update({
+          archived: true
+        })
+        await this.wallet.resetListing(listing.id)
+
+        session.flash({ notification: 'Declined offer!' })
+        return response.redirect('back')
+      }
     } else {
       session
       .withErrors([{ field: 'notification', message: "Invalid user for this listing." }])
       .flashAll()
       return response.redirect('back')
     }
+  }
+
+  async archiveListingSetReputation(id, reputation){
+    const listing = await Listing.find(id)
+    if(listing == null)
+      return
+
+    await Message.query().where({'aboutListing': id, 'archived': false}).update({
+      archived: true
+    })
+
+    switch(reputation) {
+      case 0:
+        break
+      case 1:
+        await User.query().where({'publicKey': listing.sellerPublicKey}).increment('undisputedTxn', 1)
+        await User.query().where({'publicKey': listing.buyerPublicKey}).increment('undisputedTxn', 1)
+        break
+      case -1:
+        await User.query().where({'publicKey': listing.sellerPublicKey}).increment('disputedTxn', 1)
+        await User.query().where({'publicKey': listing.buyerPublicKey}).increment('disputedTxn', 1)
+        break
+      default:
+        break
+    } 
   }
 
   async withdrawFrom({response, session, params, auth}){
@@ -226,13 +278,22 @@ class ListingController {
       return response.redirect('/offers')
     }
     if(listing.sellerRedeemable && auth.user.publicKey == listing.sellerPublicKey){
-      var txData = await this.wallet.refundListing(params.id, listing.sellerAddress, false, 1)
-      Logger.info("reward sent to: " + listing.sellerAddress)
-      session.flash({ notification: 'Reward sent to your address!' })
-      return response.redirect('/plsSignTx/'+txData)
+      if(listing.stipend != 0){
+        var txData = await this.wallet.refundListing(params.id, listing.sellerAddress, false)
+        await this.archiveListingSetReputation(params.id, 1)
+        Logger.info("reward sent to: " + listing.sellerAddress)
+        session.flash({ notification: 'Reward sent to your address!' })
+        return response.redirect('/plsSignTx/'+txData)
+      } else{
+        session.flash({ notification: 'Thank you!' })
+        await this.archiveListingSetReputation(params.id, 1)
+        return response.redirect('back')
+      }
+
     } else if(listing.buyerRedeemable && auth.user.publicKey == listing.buyerPublicKey){
       try{
-        var txData = await this.wallet.refundListing(params.id, listing.buyerAddress, false, -1)
+        var txData = await this.wallet.refundListing(params.id, listing.buyerAddress, false)
+        await this.archiveListingSetReputation(params.id, -1)
         session.flash({ notification: 'Refund sent to your address!' })
         Logger.debug("refund sent to: " + listing.buyerAddress)
         return response.redirect('/plsSignTx/'+txData)

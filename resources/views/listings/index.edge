@@ -1,6 +1,11 @@
 @layout('master')
 
 @section('content')
+<script
+  src="https://unpkg.com/webln@0.2.0/dist/webln.min.js"
+  integrity="sha384-mTReBqbhPO7ljQeIoFaD1NYS2KiYMwFJhUNpdwLj+VIuhhjvHQlZ1XpwzAvd93nQ"
+  crossorigin="anonymous"
+></script>
 <script>
   function safeAdd(num1, num2){
     return new Number(num1+num2).toFixed(8)
@@ -21,6 +26,44 @@
     return
   }
 </script>
+
+<script>
+  async function guessDetailsLN(){
+    try{
+      const webln = await WebLN.requestProvider();
+      const info = await webln.getInfo();
+      if(info){
+        console.log(info)
+        const pubkey = info.node.pubkey
+        const url = '/v1/nodeinfo/' + pubkey
+        console.log("url " + url)
+        var xmlHttp = new XMLHttpRequest()
+        xmlHttp.open( "GET", url, false ) // false for synchronous request
+        xmlHttp.send( null );
+        var response = JSON.parse(xmlHttp.responseText)
+        if(response){
+          var addr = null
+          response.node.addresses.forEach(address => {
+            if(address.addr.includes(".onion")){
+              addr = address.addr
+              return
+            }
+          })
+          if(addr == null && response.node.addresses.length > 0){
+            addr = response.node.addresses[0].addr
+          }
+          document.getElementById('lnAddress').value = pubkey + "@" + addr
+        } else {
+          throw("Couldn't find peer")
+        }
+
+      }
+    } catch (error) {
+      document.getElementById('lnAddress').value = error
+    }
+  }
+</script>
+
 <div class="card">
   <div class="card-content">
     <div class="columns">
@@ -131,12 +174,16 @@
                     Lighting address you wish to purchase liquidity for.
                     <div class="field has-addons">
                       <div class="control has-icons-left is-expanded">
-                        <input class="input" type="text" name="buyerNodePublicKey" value="{{ old('buyerNodePublicKey', '') }}" placeholder="Lightning Address e.g. 02672017ca6ef11a6c347179151365d50f23279b5c741111bdccde6ecbcbe72ecf@lnnv64gja8nkhztf5cvlul3jylvi6fc76l5si2sutga2qb6zcab124qd.onion:9735">
+                        <input class="input" type="text" id="lnAddress" name="buyerNodePublicKey" value="{{ old('buyerNodePublicKey', '') }}" placeholder="Lightning Address e.g. 026e...@lnn4qd... .onion:1234">
                         <span class="icon is-small is-left">
                           <i class="fas fa-key"></i>
                         </span>
                       </div>
+                      <div class="control">
+                        <a class="button is-primary has-text-centered" onclick="guessDetailsLN()">Guess</a>
+                      </div>
                     </div>
+                    <!--
                     Your personal Bitcoin address to be used in case a dispute arises.
                     <div class="field has-addons">
                       <div class="control has-icons-left is-expanded">
@@ -146,6 +193,7 @@
                         </span>
                       </div>
                     </div>
+                    -->
                     <br>
                     <strong><p id="{{ 'totalfee3-'+listing.id }}"></p></strong>
                     <script> document.getElementById("{{ 'totalfee3-'+listing.id }}").innerHTML = "The next page will prompt you to fund the above transaction by sending " + safeAdd({{ listing.servicefee }}, {{ listing.stipend }}) + " BTC to a provided Bitcoin address"</script>
@@ -175,15 +223,16 @@
         @endif
       </div>
       <div class="content">
-          <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a> <small> is selling </small> <strong>{{ listing.hasLSAT }} BTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days. </strong></small>
+          <a class="button is-rounded is-outlined is-small is-link" href={{ '/profile/' + listing.username }}><strong>{{ listing.username }}</strong></a><br/>
+          <small> Selling </small> <strong>{{ listing.hasLSAT }} BTC</strong><small> for up to <strong> {{ listing.sellerPeriod }} days.</strong></small>
           <p id="{{ 'totalfee2-'+listing.id }}"></p>
-          <a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerNodePublicKey }}</a>
-        <script>
-          var selpubkey = "{{ listing.sellerNodePublicKey }}"
-          var link = document.getElementById("{{ 'href-' + listing.id }}")
-          link.setAttribute("href", 'https://1ml.com/testnet/node/' + selpubkey.split('@')[0])
-          document.getElementById("{{ 'totalfee2-'+listing.id }}").innerHTML = "Fee is <strong> " + safeAdd({{ listing.stipend }}, {{ listing.servicefee }}) + " BTC</strong>"
-        </script>
+          <p><bold>Alias </bold><a class="is-link" id={{ 'href-' + listing.id }}>{{ listing.sellerAlias }}</a></p>
+          <script>
+            var selpubkey = "{{ listing.sellerNodePublicKey }}"
+            var link = document.getElementById("{{ 'href-' + listing.id }}")
+            link.setAttribute("href", 'https://1ml.com/testnet/node/' + selpubkey.split('@')[0])
+            document.getElementById("{{ 'totalfee2-'+listing.id }}").innerHTML = "Fee is <strong> " + safeAdd({{ listing.stipend }}, {{ listing.servicefee }}) + " BTC</strong>"
+          </script>
       </div>
     </div>
   </article>
