@@ -104,35 +104,6 @@ class LoginController {
       throw Error("Incorrect public key length.")
     }
 
-    try{
-      const usernameCount = await User.query().where('username', request.input('username')).count()
-      const usernameTotal = usernameCount[0]['count(*)']
-      if(usernameTotal)
-      {
-        const username = await User.query().where('username', request.input('username')).first()
-        if(username && username.publicKey != elitePublicKey){
-          //throw Error(`Username (${eliteUsername}) doesn't corespond to public key (${elitePublicKey})`)
-          throw Error(`Incorrect username (${eliteUsername}) and password`)
-        }
-      } else { 
-        const pubkeyCount = await User.query().where('publicKey', elitePublicKey).count()
-        const pubkeyTotal = pubkeyCount[0]['count(*)']
-        if(pubkeyTotal)
-          //throw Error(`Username (${eliteUsername}) doesn't corespond to public key (${elitePublicKey})`)
-          throw Error(`Incorrect username (${eliteUsername}) and password`)
-      }
-    } catch (e){
-      if(e.message === 'Undefined binding(s) detected when compiling SELECT query: select count(*) from `users` where `username` = ?'){
-        Logger.crit(`Using initialization bug to get challenge for ${request.input('username')}`)
-      } else {
-        throw Error(`Server Error ${e}`)
-      }
-    }
-
-
-    // end of validation 
-    //console.log()
-    //const elite = await User.query().where('publicKey', elitePublicKey).first()
     const challenge = this.generate(128)
     await Challenge.query().where('publicKey', elitePublicKey).delete()
     //const userId = await Challenge.table('challenges').insert({publicKey: elitePublicKey, challenge: challenge})
@@ -140,24 +111,6 @@ class LoginController {
     newChallenge.publicKey = elitePublicKey
     newChallenge.challenge = challenge
     await newChallenge.save()
-    /*
-    if(elite === null){
-      const eliteAddress = this.wallet.deriveAddressFromPublicKey(elitePublicKey)
-      const user = new User()
-      user.username = null
-      user.publicKey = elitePublicKey
-      user.address = eliteAddress
-      user.picture = null
-      user.challenge = challenge
-      user.undisputedTxn = 0
-      user.disputedTxn = 0
-      await user.save()
-      console.log("new user: " + elitePublicKey)
-    } else {
-      elite.challenge = challenge
-      await elite.save()
-    }
-    */
 
     return challenge
   }

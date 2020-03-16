@@ -42,7 +42,7 @@
     "regtest-client": "^0.2.0",
     "secure-random": "^1.1.2",
     "sqlite": "^3.0.3",
-    "sqlite3": "^4.1.0"
+    "sqlite3": "^4.1.1"
   },
   "devDependencies": {},
   "autoload": {

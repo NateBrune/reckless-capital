@@ -9,7 +9,6 @@ var Env = use('Env')
 const Listing = use('App/Models/Listing')
 const Message = use('App/Models/Message')
 const User = use('App/Models/User')
-const Swapinvoice = use('App/Models/Swapinvoice')
 
 const serverWif = Env.get('SERVER_WIF')
 const BTCD_HOST = Env.get('BTCD_HOST')
@@ -100,48 +99,6 @@ class BtcWalletController {
     }
   }
 
-  async lookupInvoice(hash){
-    await this.connectToLnd()
-    const { Lightning } = this.grpc.services
-
-    await this.connectToLnd()
-    //var hashb64 = invoiceBuffer.toString('base64')
-    //console.log(invoiceb64)
-    var request = {
-      r_hash: hash
-    }
-    var promise = new Promise((resolve, reject) => {
-      //console.log(Lightning)
-      Lightning.lookupInvoice(request, function(err, response) {
-        if(err){
-          reject(err)
-        }
-        resolve(response)
-      })
-    })
-    return await promise
-  }
-
-  async decodePaymentRequest(lnrequest){
-    await this.connectToLnd()
-    const { Lightning } = this.grpc.services
-    
-    var request = { 
-      pay_req: lnrequest
-    }
-
-    var promise = new Promise((resolve, reject) => {
-      Lightning.decodePayReq(request, function(err, response) {
-        if(err){
-          reject(err)
-        }
-        resolve(response)
-      })
-    })
-
-    return await promise
-  }
-
   async getInfo(){
     await this.connectToLnd()
     const { Lightning } = this.grpc.services
@@ -152,86 +109,6 @@ class BtcWalletController {
         }
         resolve(response)
       })
-    })
-    return await promise
-  }
-
-
-
-  async addInvoice(satoshis, memo = null){
-    await this.connectToLnd()
-    const { Lightning } = this.grpc.services
-    if(memo){
-      return await Lightning.addInvoice({ value: satoshis, memo: memo })
-    } else {
-      return await Lightning.addInvoice({ value: satoshis })
-    }
-  }
-
-  async payInvoice(lnInvoice, maxSatoshis = 0, feelimit = 0){
-    await this.connectToLnd()
-    const { Lightning } = this.grpc.services
-
-    const invoice = await this.decodePaymentRequest(lnInvoice)
-    if(!invoice){
-      return Error("Invalid invoice.")
-    }
-    const invoiceRequestedSatoshis = invoice['num_satoshis']
-
-    if(invoiceRequestedSatoshis==0 || invoiceRequestedSatoshis <= maxSatoshis){
-      // Reject invoice if it's billing for more than the maxSatoshis
-      
-
-
-      var paymentAmount = invoiceRequestedSatoshis
-      if(invoiceRequestedSatoshis == 0){
-        paymentAmount = maxSatoshis
-      }
-
-      var request = { 
-        amt: paymentAmount, 
-        payment_request: lnInvoice,
-        fee_limit: {'fixed': 50} // TODO Get this in the config
-      }
-      const promise = new Promise(async (resolve, reject) => {
-        Lightning.sendPaymentSync(request, function(err, response){
-          if(err){
-            Logger.crit("Lightning payment error!")
-            reject(err)
-          }
-          resolve(response)
-        })
-      })
-      return await promise
-    } else {
-      return Error("Invoice too large.")
-    }
-  }
-
-  async resolveOnInvoice(){
-    this.connectToLnd()
-    const { Lightning } = this.grpc.services
-    
-    var call = Lightning.subscribeInvoices()
-
-    const promise = new Promise(async (resolve, reject) => {
-      call.on('error', function(error) {
-        if (error.code === error.CANCELLED) {
-          return reject("CANCELLED")
-        }
-      })
-      call.on('data', function(response) {
-        // A response was received from the server.
-        resolve(response)
-      });
-      call.on('status', function(status) {
-        // The current status of the stream.
-        resolve(status)
-      });
-      call.on('end', function() {
-        // The server has closed the stream.
-        resolve()
-      });
     })
     return await promise
   }
