@@ -151,7 +151,6 @@ class BtcWalletController {
     listing.pendingAccept = true
     client.importAddress({address: p2wshTx.address, rescan: false})
     return p2wshTx
-    
   }
 
   deriveAddressFromPublicKey(pubkey){

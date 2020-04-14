@@ -12,14 +12,20 @@
       const webln = await WebLN.requestProvider();
       const info = await webln.getInfo();
       if(info){
-        console.log(info)
         const pubkey = info.node.pubkey
         const url = '/v1/nodeinfo/' + pubkey
         console.log("url " + url)
         var xmlHttp = new XMLHttpRequest()
         xmlHttp.open( "GET", url, false ) // false for synchronous request
         xmlHttp.send( null );
-        var response = JSON.parse(xmlHttp.responseText)
+        console.log(xmlHttp.responseText)
+        try{
+          var response = JSON.parse(xmlHttp.responseText)
+        } catch(error) {
+          document.getElementById('lnAddress').value = "Could not guess node..."
+          return
+        }
+        
         if(response){
           var addr = null
           response.node.addresses.forEach(address => {
@@ -96,11 +102,11 @@
       <div class="field">
         <label class="label"> Inbound Capacity - Amount of Bitcoin available to open a channel. <a href="img/inbound.png"> View example on Casa node </a>
         <br>
-        The largest possible Lighting Network channel size at the moment is 0.16777215 BTC.
+        Lighting Network channel sizes must be in the range of 0.0002 - 0.16777215 BTC.
         
         </label>
         <div class="control has-icons-left">
-          <input class="input" type="text" id="wealth" name="hasLSAT" value="{{ old('hasLSAT', '') }}" oninput="update()" placeholder="Available inbound capacity e.g. 0.16">
+          <input class="input" type="number" min="0.0002" step="0.0001" id="wealth" name="hasLSAT" value="{{ old('hasLSAT', '') }}" oninput="update()" placeholder="Available inbound capacity e.g. 0.16">
           <span class="icon is-small is-left">
             <i class="fab fa-btc"></i>
           </span>

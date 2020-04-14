@@ -46,5 +46,6 @@ Route.get('profile/:key', 'LoginController.viewProfile')
 Route.get('/nodeinfo/', 'HelpController.nodeInfo')
 Route.get('/v1/nodeinfo', 'ApiController.nodeInfo')
 Route.get('/v1/nodeinfo/:id', 'ApiController.nodeInfo')
+Route.get('/v1/getinfo/', 'ApiController.getInfo')
 
 

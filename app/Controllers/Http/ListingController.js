@@ -89,10 +89,15 @@ class ListingController {
     // validate form input
     const validation = await validate(request.all(), {
       owner: 'required',
-      hasLSAT: 'required|range:0.000001,0.16777216',
+      hasLSAT: 'required|range:0.00019999,0.16777216',
       stipend: 'required|range:0.0000075,10.0',
       period: 'required|range:0,91',
     })
+    if(validation.fails()) {
+      session.withErrors(validation.messages())
+              .flashAll()
+      return response.redirect('back')
+    }
 
     // persist to database
     const elite = await auth.getUser()
@@ -186,7 +191,7 @@ class ListingController {
       .flashAll()
       return response.redirect('back')
     }
-    console.log("accepting listing but the last chance is: " + listing.lastChanceToAccept)
+    //console.log("accepting listing but the last chance is: " + listing.lastChanceToAccept)
     if(auth.user.publicKey === listing.sellerPublicKey && listing.lastChanceToAccept > (new Date().getTime() / 1000).toFixed(0)){
       await Message.query().where({'aboutListing': params.id, 'archived': false}).update({
         message: "accepted"
@@ -194,7 +199,7 @@ class ListingController {
       listing.accepted = true
       listing.lastChanceToOpenChannel = ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0)
       await listing.save()
-      console.log("saved listing with last change = " + ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0))
+      console.log("saved listing with last chance = " + ((new Date().getTime() + (24*60*60*1000)) / 1000).toFixed(0))
       session.flash({ notification: 'Accepted!' })
       return response.redirect('back')
     } else {

@@ -129,19 +129,21 @@ class MailController {
       const listing = await Listing.find(message.aboutListing)
       // Put listing back on the map
       if(listing != null){
-        if(listing.consecutiveFailedCheckups == 99 && !(listing.sellerRedeemable || listing.buyerRedeemable || listing.funded || listing.inMempool)){
-          //var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, false, -1)
-          await User.query().where({'publicKey': listing.sellerPublicKey}).increment('disputedTxn', 1)
-          await User.query().where({'publicKey': listing.buyerPublicKey}).increment('disputedTxn', 1)
-        } else {
-          //var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, true)
-          session
-          .withErrors([{ field: 'notification', message: 'Cannot cancel contract during liquidity lease.' }])
-          .flashAll()
-          return response.redirect('/offers')
-        }
-        if(listing.funded == false)
+        if(listing.funded == false){
           await this.wallet.resetListing(message.aboutListing)
+        } else {
+          if(listing.consecutiveFailedCheckups == 99 && !(listing.sellerRedeemable || listing.buyerRedeemable ||  listing.inMempool)){
+            //var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, false, -1)
+            await User.query().where({'publicKey': listing.sellerPublicKey}).increment('disputedTxn', 1)
+            await User.query().where({'publicKey': listing.buyerPublicKey}).increment('disputedTxn', 1)
+          } else {
+            //var txData = await this.wallet.refundListing(message.aboutListing, listing.buyerAddress, true)
+            session
+            .withErrors([{ field: 'notification', message: 'Cannot cancel contract during liquidity lease.' }])
+            .flashAll()
+            return response.redirect('/offers')
+          }
+        }
       }
     }
     session.flash({ notification: 'Message deleted!' })

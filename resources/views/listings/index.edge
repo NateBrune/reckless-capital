@@ -171,7 +171,7 @@
                     {{ csrfField() }}
                     <input type="hidden" name="toElite" value="{{ listing.username }}">
                     <input type="hidden" name="message" value="{{ auth.user.address +' would like ' + listing.hasLSAT +' BTC liquidity' }}">
-                    Lighting address you wish to purchase liquidity for.
+                    Lighting Node URI corresponding to the node you wish to purchase liquidity for.
                     <div class="field has-addons">
                       <div class="control has-icons-left is-expanded">
                         <input class="input" type="text" id="lnAddress" name="buyerNodePublicKey" value="{{ old('buyerNodePublicKey', '') }}" placeholder="Lightning Address e.g. 026e...@lnn4qd... .onion:1234">
