@@ -117,7 +117,7 @@
       <div class="field">
         <label class="label"> Fee - Amount of Bitcoin you will charge to open a channel to a customer. A 0.5% fee will be charged on top of this for the purposes of facilitating the transaction.</label>
         <div class="control has-icons-left">
-          <input class="input" type="text" id="stipend" step="0.00001" name="stipend" value="{{ old('stipend', '') }}" oninput="update()" placeholder="Fee">
+          <input class="input" type="number" id="stipend" step="0.00001" name="stipend" value="{{ old('stipend', '') }}" oninput="update()" placeholder="Fee">
           <span class="icon is-small is-left">
             <i class="fab fa-btc"></i>
           </span>
