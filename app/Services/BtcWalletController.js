@@ -20,9 +20,11 @@ const LND_CERT = Env.get('LND_CERT')
 const LND_MACAROON = Env.get('LND_MACAROON')
 const SERVERADDRESS = Env.get('SERVER_ADDRESS')
 const TESTNET = bitcoin.networks.testnet
+const MAINNET = bitcoin.networks.mainnet
 
 const client = new Client({
-  network: 'testnet',
+  //network: 'testnet',
+  network: 'mainnet',
   host: BTCD_HOST,
   //port: 8332,
   port: BTCD_PORT,
@@ -139,11 +141,12 @@ class BtcWalletController {
 
 
     //redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: bitcoin.networks.regtest })
-    redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: TESTNET })
+    redeemscript = bitcoin.payments.p2ms({ m: 2, pubkeys, network: MAINNET })
     var p2wshTx = bitcoin.payments.p2wsh({
       redeem: redeemscript,
       //network: bitcoin.networks.regtest
-      network: TESTNET
+      //network: TESTNET
+      network: MAINNET
     })
     listing.output = p2wshTx.output.toString('hex')
     listing.redeemscript = p2wshTx.redeem.output.toString('hex')
@@ -155,7 +158,7 @@ class BtcWalletController {
 
   deriveAddressFromPublicKey(pubkey){
     const publicKeyBuffer = Buffer.from(pubkey, "hex")
-    const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: TESTNET })
+    const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: MAINNET })
     //const { address } = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer, network: regtest })
     return address
   }
@@ -231,7 +234,7 @@ class BtcWalletController {
     if(listing == null ) { return new Error("Invalid listing id specified. Couldn't find listing.")}
     const serverKeyPair = this.deriveServerKeyPair(id)
     //const psbt = new bitcoin.Psbt({ network: regtest })
-    const psbt = new bitcoin.Psbt({ network: TESTNET })
+    const psbt = new bitcoin.Psbt({ network: MAINNET })
     psbt.setVersion(2); // These are defaults. This line is not needed.
     psbt.setLocktime(0); // These are defaults. This line is not needed.
 
