@@ -79,17 +79,22 @@ class LoginController {
     
     await Listing.query().where('sellerPublicKey', elite.publicKey).update({
       username: elite.username,
-      picture: elite.picture
+      picture: elite.picture,
+      sellerAddress: elite.refundAddress
+    })
+
+    await Listing.query().where('buyerPublicKey', elite.publicKey).update({
+      buyerAddress: elite.refundAddress
     })
 
     await Message.query().where('senderAddress', elite.address).update({
       senderUsername: elite.username,
-      senderpicture: elite.picture
+      senderPicture: elite.picture
     })
 
     await Message.query().where('receiverAddress', elite.address).update({
       receiverUsername: elite.username,
-      receiverpicture: elite.picture
+      receiverPicture: elite.picture
     })
 
     console.log("updating " + elite.address + " to " + elite.username)
