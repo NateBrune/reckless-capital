@@ -245,8 +245,8 @@ class BtcWalletController {
     var totalSats = stipendSats + feeSats + extraSats
     var minfee = Math.round(totalSats * 0.00001) //relayfee on mainnet TODO: fix fee calculation
     //console.log(`${stipendSats} ${feeSats} ${extraSats} ${totalSats} ${minfee}`)
-    // 1 Sat per byte + 2 for good luck
-    var FEE = (1*180 + 2*34 + 10) + 2
+    // ~2 Sat per byte
+    var FEE = 2*(1*180 + 2*34 + 10)
     console.log(`fee set to: ${FEE}, could be set to ${minfee}`)
     psbt.addInput({
       hash: listing.fundingTransactionHash,

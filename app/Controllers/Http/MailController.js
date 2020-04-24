@@ -100,8 +100,10 @@ class MailController {
       messages = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
     } else if(sortBy == "seller") {
       messages = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
-    } else {
-      
+    } else if(sortBy === "archivedBuyer"){
+      messages = await Message.query().where({'senderUsername': auth.user.username, 'archived': true}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
+    } else if(sortBy === "archivedSeller"){
+      messages = await Message.query().where({'receiverUsername': auth.user.username, 'archived': true}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
     }
     var listings = {}
       

@@ -270,7 +270,10 @@ class ListingController {
         break
       default:
         break
-    } 
+    }
+    
+    listing.archived = true
+    await listing.save()
   }
 
   async withdrawFrom({response, session, params, auth}){
