@@ -90,8 +90,8 @@ class ListingController {
     const validation = await validate(request.all(), {
       owner: 'required',
       hasLSAT: 'required|range:0.00019999,0.16777216',
-      stipend: 'required|range:0.0000075,10.0',
-      period: 'required|range:0,91',
+      stipend: 'required|range:0.00002,10.0',
+      period: 'required|range:0,91'
     })
     if(validation.fails()) {
       session.withErrors(validation.messages())
@@ -271,7 +271,7 @@ class ListingController {
       default:
         break
     }
-    
+
     listing.archived = true
     await listing.save()
   }
