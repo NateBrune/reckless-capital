@@ -86,16 +86,20 @@ class ListingController {
   }
 
   async store ({ auth, request, response, session }) {
-    // validate form input
+    const MIN_STIPEND = 0.00005
     const validation = await validate(request.all(), {
       owner: 'required',
       hasLSAT: 'required|range:0.00019999,0.16777216',
-      stipend: 'required|range:0.00002,10.0',
+      //stipend: 'required|range:0.00002,10.0',
       period: 'required|range:0,91'
     })
+
     if(validation.fails()) {
       session.withErrors(validation.messages())
               .flashAll()
+      return response.redirect('back')
+    } else if(request.input('stipend') && new Number(request.input('stipend')).toFixed(8) < MIN_STIPEND && new Number(request.input('stipend')).toFixed(8) != 0) {
+      session.withErrors([{ field: 'stipend', message: 'Minimum stipend is 0.00005 BTC' }]).flashAll()
       return response.redirect('back')
     }
 
