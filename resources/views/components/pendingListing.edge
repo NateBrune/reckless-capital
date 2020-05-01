@@ -105,7 +105,9 @@
                 <script>   
                     document.getElementById("{{ 'acceptBy-'+message.aboutListing }}").innerHTML = moment.unix({{ listings[message.aboutListing].lastChanceToAccept }}).format("LLLL")
                 </script>
-              @else 
+              @elseif(message.message == "mempool")
+                <center>Payment received. Waiting for one transaction confirmation.</center>
+              @else
                 <center>Payment is {{ message.message }}.</center>
               @endif
             </div>
