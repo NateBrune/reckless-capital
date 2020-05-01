@@ -5,6 +5,7 @@ var bitcoinMessage = require('bitcoinjs-message')
 var secureRandom = require('secure-random')
 const bip39 = require('bip39')
 const TESTNET = bitcoin.networks.testnet
+const MAINNET = bitcoin.networks.mainnet
 
 window.generateMnemonic = function() {
   var mnemonic = bip39.entropyToMnemonic(secureRandom.randomBuffer(32))
@@ -83,7 +84,7 @@ window.deriveAddress = function (username, password, count){
   //this.console.log(keyPair)
 
   //const addr = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network: TESTNET }).address
-  const addr = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network: bitcoin.networks.regtest }).address
+  const addr = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network: bitcoin.networks.mainnet }).address
   //const secret = keyPair.toWIF()
   
   return addr
@@ -97,7 +98,7 @@ window.signWithMnemonic = function (mnemonic, message){
     var child = node.derivePath(path)
     var keyPair = bitcoin.ECPair.fromWIF(child.toWIF())
     var privateKey = keyPair.privateKey
-    var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: bitcoin.networks.regtest })
+    var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: bitcoin.networks.mainnet })
     return signature.toString('base64')
   } catch(e){
     alert("detected critical error, failed to login. technical details: " + e)
@@ -123,7 +124,7 @@ window.signString = function (wif, message){
   var keyPair = bitcoin.ECPair.fromWIF(wif)
   var privateKey = keyPair.privateKey
   //var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: TESTNET })
-  var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: bitcoin.networks.regtest })
+  var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed, { segwitType: 'p2wpkh',  network: bitcoin.networks.mainnet })
 
   return signature
 }
