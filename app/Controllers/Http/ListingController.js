@@ -139,7 +139,7 @@ class ListingController {
       precision = Math.pow(10, precision)
       return Math.ceil(num * precision) / precision
     }
-    if(request.input('stipend') === undefined){
+    if(new Number(request.input('stipend')) === 0){
       listing.servicefee = 0
     } else {
       // Avoid dust limit of 546 sats
