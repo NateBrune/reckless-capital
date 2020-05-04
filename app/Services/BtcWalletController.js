@@ -241,6 +241,11 @@ class BtcWalletController {
     // Pay stipend
     var stipendSats = Math.round(new Number(listing.stipend) * 100000000)
     var feeSats = Math.round(new Number(listing.servicefee) * 100000000)
+    if(!stipendSats || !feeSats){
+      console.error("In refundListing method but don't have enough Bitcoin to refund customer...")
+      console.error(`Stipend == ${stipendSats} : Service fee: ${feeSats}`)
+      throw("Cant refund listing because it doesn't have (stipend/servicefee)")
+    }
     var extraSats = new Number(listing.fundingTransactionExtra)
     var totalSats = stipendSats + feeSats + extraSats
     var minfee = Math.round(totalSats * 0.00001) //relayfee on mainnet TODO: fix fee calculation

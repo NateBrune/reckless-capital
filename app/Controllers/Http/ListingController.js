@@ -139,13 +139,15 @@ class ListingController {
       precision = Math.pow(10, precision)
       return Math.ceil(num * precision) / precision
     }
-
-    // Avoid dust limit of 546 sats
-    var servicefee = roundUp(new Number(request.input('stipend')* 100000000 * SERVICE_FEE / 100000000), 8).toFixed(8)
-    var percentageFeeSats = roundUp(new Number(request.input('stipend')* 100000000 * SERVICE_FEE), 8)
-    const minServiceFee = 546 + 2*(1*180 + 2*34 + 10) // 1062 dust limit + 2 sat per byte tx fee
-
-    listing.servicefee = (percentageFeeSats > minServiceFee ? servicefee : 0.00001062)
+    if(request.input('stipend') === undefined){
+      listing.servicefee = 0
+    } else {
+      // Avoid dust limit of 546 sats
+      var servicefee = roundUp(new Number(request.input('stipend')* 100000000 * SERVICE_FEE / 100000000), 8).toFixed(8)
+      var percentageFeeSats = roundUp(new Number(request.input('stipend')* 100000000 * SERVICE_FEE), 8)
+      const minServiceFee = 546 + 2*(1*180 + 2*34 + 10) // 1062 dust limit + 2 sat per byte tx fee
+      listing.servicefee = (percentageFeeSats > minServiceFee ? servicefee : 0.00001062)
+    }
     listing.hasLSAT = new Number(request.input('hasLSAT')).toFixed(8)
     listing.sellerPeriod = new Number(request.input('period')).toFixed(0)
     listing.wantsLSAT = null
@@ -306,14 +308,19 @@ class ListingController {
         await this.archiveListingSetReputation(params.id, 1)
         return response.redirect('back')
       }
-
     } else if(listing.buyerRedeemable && auth.user.publicKey == listing.buyerPublicKey){
       try{
-        var txData = await this.wallet.refundListing(params.id, listing.buyerAddress, false)
-        await this.archiveListingSetReputation(params.id, -1)
-        session.flash({ notification: 'Refund sent to your address!' })
-        Logger.debug("refund sent to: " + listing.buyerAddress)
-        return response.redirect('/plsSignTx/'+txData)
+        if(listing.stipend != 0){
+          var txData = await this.wallet.refundListing(params.id, listing.buyerAddress, false)
+          await this.archiveListingSetReputation(params.id, -1)
+          session.flash({ notification: 'Refund sent to your address!' })
+          Logger.debug("refund sent to: " + listing.buyerAddress)
+          return response.redirect('/plsSignTx/'+txData)
+        } else {
+          session.flash({ notification: 'Thank you. ' + listing.username + ' has lost reputation.'  })
+          await this.archiveListingSetReputation(params.id, -1)
+          return response.redirect('back')
+        }
       } catch(e){
         Logger.crit(`withdrawing encountered error on listing: ${params.id}`)
         Logger.debug(e)
