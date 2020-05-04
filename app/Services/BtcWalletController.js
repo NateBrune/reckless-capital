@@ -273,15 +273,16 @@ class BtcWalletController {
           value: totalSats - FEE
         })
       } else {
-        var customerSats = stipendSats + extraSats - FEE
-        console.log(`customer profits ${customerSats} we profit ${feeSats}`) 
+        var customerSats = stipendSats
+        var serviceFeeTotal = feeSats + extraSats - FEE
+        console.log(`customer profits ${customerSats} we profit ${serviceFeeTotal}`) 
         var customerRefundOutput = {
           address: refundAddress,
           value: customerSats
         }
         var serviceFeeOutput = {
           address: SERVERADDRESS,
-          value: feeSats
+          value: serviceFeeTotal
         }
         psbt.addOutputs([customerRefundOutput, serviceFeeOutput]);
       }

@@ -86,7 +86,7 @@ class ListingController {
   }
 
   async store ({ auth, request, response, session }) {
-    const MIN_STIPEND = 0.00005
+    const MIN_STIPEND = 0.00000546
     const validation = await validate(request.all(), {
       owner: 'required',
       hasLSAT: 'required|range:0.00019999,0.16777216',
@@ -99,7 +99,7 @@ class ListingController {
               .flashAll()
       return response.redirect('back')
     } else if(request.input('stipend') && new Number(request.input('stipend')).toFixed(8) < MIN_STIPEND && new Number(request.input('stipend')).toFixed(8) != 0) {
-      session.withErrors([{ field: 'stipend', message: 'Minimum stipend is 0.00005 BTC' }]).flashAll()
+      session.withErrors([{ field: 'stipend', message: 'Minimum stipend is 0.00000546 BTC' }]).flashAll()
       return response.redirect('back')
     }
 
@@ -139,8 +139,13 @@ class ListingController {
       precision = Math.pow(10, precision)
       return Math.ceil(num * precision) / precision
     }
+
+    // Avoid dust limit of 546 sats
     var servicefee = roundUp(new Number(request.input('stipend')* 100000000 * SERVICE_FEE / 100000000), 8).toFixed(8)
-    listing.servicefee = servicefee
+    var percentageFeeSats = roundUp(new Number(request.input('stipend')* 100000000 * SERVICE_FEE), 8)
+    const minServiceFee = 546 + 2*(1*180 + 2*34 + 10) // 1062 dust limit + 2 sat per byte tx fee
+
+    listing.servicefee = (percentageFeeSats > minServiceFee ? servicefee : 0.00001062)
     listing.hasLSAT = new Number(request.input('hasLSAT')).toFixed(8)
     listing.sellerPeriod = new Number(request.input('period')).toFixed(0)
     listing.wantsLSAT = null

@@ -94,7 +94,7 @@
         <h1> Terms </h1>
         <ul>
           <li> Inbound Capacity - Amount of Bitcoin available to open a channel. <a href="img/inbound.png"> View example on Casa node. </a> </ui>
-          <li> Fee - Amount of Bitcoin you will charge to open a channel to a customer. A 0.5% fee will be charged on top of this for the purposes of facilitating the transaction. </ui>
+          <li> Stipend - Amount of Bitcoin you will charge to open a channel to a customer.</ui>
         </ul>
       </div>
       -->
@@ -115,10 +115,10 @@
   
         <!–– How much the owner wants for it ––>
       <div class="field">
-        <label class="label"> Fee - Amount of Bitcoin you will charge to open a channel to a customer. A 0.5% fee will be charged on top of this for the purposes of facilitating the transaction.</label>
-        <label class="label"> Can be left blank if you do not wish to collect fees. Minimum fee is 0.00005 BTC.</label>
+        <label class="label"> Stipend - Amount of Bitcoin you will charge to open a channel to a customer. A service fee will be charged on top of this for the purposes of facilitating the transaction.</label>
+        <label class="label"> Can be left blank if you do not wish to collect fees. Minimum fee is 0.00001000 BTC.</label>
         <div class="control has-icons-left">
-          <input class="input" type="number" id="stipend" step="0.00001" name="stipend" value="{{ old('stipend', '') }}" oninput="update()" placeholder="Fee">
+          <input class="input" type="number" id="stipend" step="0.00001" name="stipend" value="{{ old('stipend', '') }}" oninput="update()" placeholder="Stipend">
           <span class="icon is-small is-left">
             <i class="fab fa-btc"></i>
           </span>
@@ -165,7 +165,9 @@
   function update(){
     document.getElementById("twealth").innerHTML = new Number(document.getElementById("wealth").value).toFixed(8)
     document.getElementById("tstipend").innerHTML = new Number(document.getElementById("stipend").value).toFixed(8)
-    document.getElementById("tservicefee").innerHTML = roundUp( (new Number(document.getElementById("stipend").value) * 100000000 * 0.005 / 100000000),8).toFixed(8)
+    var percentage = roundUp( (new Number(document.getElementById("stipend").value) * 100000000 * 0.005 / 100000000),8).toFixed(8)
+    const dustLimit = 0.00001062
+    document.getElementById("tservicefee").innerHTML = (percentage > dustLimit ? percentage : dustLimit)
     document.getElementById("ttotalfee").innerHTML = (new Number(document.getElementById("tservicefee").innerHTML) + new Number(document.getElementById("tstipend").innerHTML)).toFixed(8)
     document.getElementById("tdays").innerHTML = document.getElementById("period").value
   }
