@@ -139,6 +139,8 @@ class ListingController {
       precision = Math.pow(10, precision)
       return Math.ceil(num * precision) / precision
     }
+    console.log('stipend: ')
+    console.log(request.input('stipend: '))
     if(new Number(request.input('stipend')) === 0){
       listing.servicefee = 0
     } else {
