@@ -20,12 +20,18 @@
         <div class="columns">
           <div class="column is-four-fifths">
             @if(message.message == "sellerRedeemable")
-            <p>
-                Please click the button below to withdraw your funds to your payment address. ({{ listings[message.aboutListing].sellerAddress }})
-            </p>
-            <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
-            <br>
-            <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
+              @if(listings[message.aboutListing].stipend == 0)
+                <p>
+                  Transaction completed. Thank you!
+                </p>
+              @else
+                <p>
+                    Please click the button below to withdraw your funds to your payment address. ({{ listings[message.aboutListing].sellerAddress }})
+                </p>
+                <a class="button is-medium is-primary is-fullwidth" href="{{ '/withdrawFrom/'+message.aboutListing }}">Withdraw Funds</a>
+                <br>
+                <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
+              @endif
             @else
             <div class="columns">
               <div class="column is-three-quarters">
@@ -87,10 +93,12 @@
               </script>
             -->
             @elseif(message.message == "sellerRedeemable")
-            <div class="notification is-light">
-              <center>Complete!</center>
-            </div>
-            <p> You have {{ listings[message.aboutListing].stipend }} BTC waiting to be redeemed.</p>
+              <div class="notification is-light">
+                <center>Complete!</center>
+              </div>
+              @if(listings[message.aboutListing].stipend != 0)
+                <p> You have {{ listings[message.aboutListing].stipend }} BTC waiting to be redeemed.</p>
+              @endif
             @else
             <div class="notification is-warning">
               @if(message.message == "accepted")

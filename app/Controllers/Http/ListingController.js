@@ -139,16 +139,8 @@ class ListingController {
       precision = Math.pow(10, precision)
       return Math.ceil(num * precision) / precision
     }
-    console.log('stipend: ')
-    console.log(request.input('stipend'))
-    console.log(new Number(request.input('stipend')))
-    console.log(request.input('stipend') === null)
-    console.log(request.input('stipend') == null)
-    console.log(request.input('stipend') === undefined)
-    console.log(request.input('stipend') == undefined)
     if(request.input('stipend') === null){
       listing.servicefee = 0
-      console.log('service fee set to 0.00 BTC')
     } else {
       // Avoid dust limit of 546 sats
       var servicefee = roundUp(new Number(request.input('stipend')* 100000000 * SERVICE_FEE / 100000000), 8).toFixed(8)
