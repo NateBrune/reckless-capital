@@ -142,7 +142,11 @@ class ListingController {
     console.log('stipend: ')
     console.log(request.input('stipend'))
     console.log(new Number(request.input('stipend')))
-    if(new Number(request.input('stipend')) === 0){
+    console.log(request.input('stipend') === null)
+    console.log(request.input('stipend') == null)
+    console.log(request.input('stipend') === undefined)
+    console.log(request.input('stipend') == undefined)
+    if(request.input('stipend') === null){
       listing.servicefee = 0
       console.log('service fee set to 0.00 BTC')
     } else {
