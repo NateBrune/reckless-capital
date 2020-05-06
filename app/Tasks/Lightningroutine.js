@@ -109,7 +109,7 @@ class Lightningroutine extends Task {
             var lsting = await Listing.find(listing.id)
             lsting.consecutiveFailedCheckups = 0
             lsting.channelOpen = true
-            lsting.channelMustBeOpenUntil = ((new Date().getTime() + (listing.sellerPeriod*60*1000)) / 1000).toFixed(0) //(listing.sellerPeriod*24*60*60*1000)) / 1000).toFixed(0)
+            lsting.channelMustBeOpenUntil = ((new Date().getTime() + (listing.sellerPeriod*1000*60*60*24)) / 1000).toFixed(0) //(listing.sellerPeriod*24*60*60*1000)) / 1000).toFixed(0)
             lsting.accepted = true
             await lsting.save()
           } else {
