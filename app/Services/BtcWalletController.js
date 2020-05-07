@@ -149,7 +149,7 @@ class BtcWalletController {
       network: MAINNET
     })
     listing.output = p2wshTx.output.toString('hex')
-    listing.redeemscript = p2wshTx.redeem.output.toString('hex')
+    listing.redeemScript = p2wshTx.redeem.output.toString('hex')
     listing.fundingAddress = p2wshTx.address
     listing.pendingAccept = true
     client.importAddress({address: p2wshTx.address, rescan: false})
