@@ -60,18 +60,14 @@ class MailController {
       var query = await Message.query().where({'receiverUsername': auth.user.username, archived: false}).orderBy('created_at', 'desc').paginate(page, 10)
       messages = query.toJSON()
     }
-    
-    /*
     if(sortBy === "ArchivedSent"){
       var query  = await Message.query().where({'senderUsername': auth.user.username, archived: true}).orderBy('created_at', 'desc').paginate(page, 10)
       messages = query.toJSON()
     }
-
     if( sortBy === "ArchivedReceived"){
       var query = await Message.query().where({'receiverUsername': auth.user.username, archived: true}).orderBy('created_at', 'desc').paginate(page, 10)
       messages = query.toJSON()
     }
-    */
 
     return view.render('mail.index', { messages: messages })
   }
@@ -100,13 +96,14 @@ class MailController {
     var messages = undefined
     if(sortBy == "buyer"){
       messages = await Message.query().where({'senderUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
-    } else if(sortBy == "seller") {
+    }
+    if(sortBy == "seller") {
       messages = await Message.query().where({'receiverUsername': auth.user.username, 'archived': false}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
-    } else if(sortBy === "archivedBuyer"){
+    }/*else if(sortBy === "archivedBuyer"){
       messages = await Message.query().where({'senderUsername': auth.user.username, 'archived': true}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
     } else if(sortBy === "archivedSeller"){
       messages = await Message.query().where({'receiverUsername': auth.user.username, 'archived': true}).whereNot({'aboutListing': null}).orderBy('created_at', 'desc').paginate(page, 10)
-    }
+    }*/
     var listings = {}
       
     await this.asyncForEach (messages.rows, async (message) => {
