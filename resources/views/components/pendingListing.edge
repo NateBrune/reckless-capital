@@ -131,7 +131,7 @@
         </span>
         <p id="{{ 'created-at-' + message.aboutListing }}"></p>
         <script>
-          document.getElementById("{{ 'created-at-' + message.aboutListing }}").innerHTML = "Created at: " + moment("{{ listings[message.aboutListing].created_at }}").format("LLLL")
+          document.getElementById("{{ 'created-at-' + message.aboutListing }}").innerHTML = "Created on: " + moment("{{ listings[message.aboutListing].created_at }}").format("LLLL")
         </script>
         @if(message.message == "funded")
           <div class="columns">

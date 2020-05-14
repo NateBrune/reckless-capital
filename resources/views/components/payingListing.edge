@@ -76,7 +76,7 @@
                   <p id="{{ 'sellerRedeemable-' + message.aboutListing }}">  {{ listings[message.aboutListing].channelMustBeOpenUntil }}
                   </p>
                   <script>
-                      var formatted = moment.unix({{ listings[message.aboutListing].lastChanceToOpenChannel }}).format("LLLL") 
+                      var formatted = moment.unix({{ listings[message.aboutListing].updated_at }}).format("LLLL") <!-- TODO: don't use updated_at -->
                       document.getElementById("{{ 'sellerRedeemable-' + message.aboutListing }}").innerHTML = "Transaction completed on " + formatted + ". Your reputation has increased by +1!"
                   </script>
                   @endif
@@ -164,7 +164,7 @@
         @endif
         <p id="{{ 'created-at-' + message.aboutListing }}"></p>
         <script>
-          document.getElementById("{{ 'created-at-' + message.aboutListing }}").innerHTML = "Created at: " + moment("{{ listings[message.aboutListing].created_at }}").format("LLLL")
+          document.getElementById("{{ 'created-at-' + message.aboutListing }}").innerHTML = "Created on: " + moment("{{ listings[message.aboutListing].created_at }}").format("LLLL")
         </script>
       </div>
     </div>

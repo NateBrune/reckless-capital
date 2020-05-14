@@ -60,7 +60,8 @@ class MailController {
       var query = await Message.query().where({'receiverUsername': auth.user.username, archived: false}).orderBy('created_at', 'desc').paginate(page, 10)
       messages = query.toJSON()
     }
-
+    
+    /*
     if(sortBy === "ArchivedSent"){
       var query  = await Message.query().where({'senderUsername': auth.user.username, archived: true}).orderBy('created_at', 'desc').paginate(page, 10)
       messages = query.toJSON()
@@ -70,6 +71,7 @@ class MailController {
       var query = await Message.query().where({'receiverUsername': auth.user.username, archived: true}).orderBy('created_at', 'desc').paginate(page, 10)
       messages = query.toJSON()
     }
+    */
 
     return view.render('mail.index', { messages: messages })
   }
