@@ -73,10 +73,10 @@
                     <br>
                     <a class="button is-medium is-grey-light is-fullwidth" href="/settings">Change Payment Address</a>
                   @elseif(message.message == "sellerRedeemable")
-                  <p id="{{ 'sellerRedeemable-' + message.aboutListing }}">  {{ listings[message.aboutListing].channelMustBeOpenUntil }}
+                  <p id="{{ 'sellerRedeemable-' + message.aboutListing }}"> Transaction completed on {{ listings[message.aboutListing].updated_at }}. Your reputation has increased by +1!
                   </p>
                   <script>
-                      var formatted = moment.unix({{ listings[message.aboutListing].updated_at }}).format("LLLL") <!-- TODO: don't use updated_at -->
+                      var formatted = moment("{{ listings[message.aboutListing].updated_at }}").format("LLLL") <!-- TODO: don't use updated_at -->
                       document.getElementById("{{ 'sellerRedeemable-' + message.aboutListing }}").innerHTML = "Transaction completed on " + formatted + ". Your reputation has increased by +1!"
                   </script>
                   @endif
