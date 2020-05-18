@@ -230,7 +230,7 @@
           <script>
             var selpubkey = "{{ listing.sellerNodePublicKey }}"
             var link = document.getElementById("{{ 'href-' + listing.id }}")
-            link.setAttribute("href", 'https://1ml.com/testnet/node/' + selpubkey.split('@')[0])
+            link.setAttribute("href", 'https://1ml.com/node/' + selpubkey.split('@')[0])
             document.getElementById("{{ 'totalfee2-'+listing.id }}").innerHTML = "Fee is <strong> " + safeAdd({{ listing.stipend }}, {{ listing.servicefee }}) + " BTC</strong>"
           </script>
       </div>
